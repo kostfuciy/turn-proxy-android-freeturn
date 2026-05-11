@@ -115,10 +115,14 @@ class ProxyService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (ProxyServiceState.isRunning.value) return START_STICKY
-
-        openAppIntent = packageManager.getLaunchIntentForPackage(packageName)?.let {
-            PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE)
+        // ВАЖНО: startForeground вызываем ПЕРВЫМ делом и БЕЗУСЛОВНО. Если ранее
+        // была ветка с return до startForeground (например, при stale
+        // ProxyServiceState.isRunning после kill'а сервиса без onDestroy),
+        // система через ~5с бросала ForegroundServiceDidNotStartInTimeException.
+        if (openAppIntent == null) {
+            openAppIntent = packageManager.getLaunchIntentForPackage(packageName)?.let {
+                PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE)
+            }
         }
         val notification = NotificationCompat.Builder(this, CHANNEL_PROXY)
             .setContentTitle(getString(R.string.notif_proxy_title))
@@ -128,6 +132,14 @@ class ProxyService : Service() {
             .setContentIntent(openAppIntent)
             .build()
         startForeground(NOTIF_ID_FG, notification)
+
+        // Если процесс ядра ещё жив — это повторный onStartCommand (например,
+        // sticky-рестарт). Не запускаем второй процесс, но требование о
+        // startForeground выше уже выполнено.
+        if (process.get() != null) {
+            ProxyServiceState.setRunning(true)
+            return START_STICKY
+        }
 
         ProxyServiceState.setRunning(true)
         userStopped.set(false)
