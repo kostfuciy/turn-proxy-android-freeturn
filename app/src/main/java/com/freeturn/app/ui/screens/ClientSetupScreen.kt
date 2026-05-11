@@ -528,12 +528,13 @@ fun ClientSetupScreen(
                             }
                         }
                     )
-                    if (!privacyMode && draftDirty && draftValid) {
+                    if (!privacyMode && draftDirty) {
                         androidx.compose.material3.TextButton(
                             onClick = {
                                 HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
                                 viewModel.setWrapKey(wrapKeyDraft)
                             },
+                            enabled = draftValid,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(stringResource(R.string.wrap_key_apply))
