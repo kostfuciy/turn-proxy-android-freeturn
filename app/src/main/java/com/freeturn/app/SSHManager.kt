@@ -43,8 +43,13 @@ class SSHManager {
         try {
             val jsch = JSch()
             if (sshKey.isNotBlank()) {
-                // Аутентификация по приватному ключу (без парольной фразы)
-                jsch.addIdentity("identity", sshKey.toByteArray(Charsets.UTF_8), null, null)
+                // OpenSSH ed25519/RSA-ключи требуют LF и финального перевода строки —
+                // при вставке через Android-textfield/Windows может прилететь CRLF, и парсер
+                // OPENSSH PRIVATE KEY роняет ключ. Нормализуем перед addIdentity.
+                // Парольная фраза (если задана пользователем) приходит в pass-поле.
+                val keyBytes = normalizePrivateKey(sshKey)
+                val passphrase = pass.takeIf { it.isNotEmpty() }?.toByteArray(Charsets.UTF_8)
+                jsch.addIdentity("identity", keyBytes, null, passphrase)
             }
             tempSession = jsch.getSession(user, ip, port)
             if (sshKey.isBlank()) {
@@ -172,6 +177,12 @@ class SSHManager {
         } finally {
             tempSession?.disconnect()
         }
+    }
+
+    private fun normalizePrivateKey(raw: String): ByteArray {
+        val lf = raw.replace("\r\n", "\n").replace("\r", "\n").trim()
+        val withTrailingNl = if (lf.endsWith("\n")) lf else "$lf\n"
+        return withTrailingNl.toByteArray(Charsets.UTF_8)
     }
 }
 
