@@ -57,6 +57,7 @@ import com.freeturn.app.data.DnsMode
 import com.freeturn.app.data.ObfProfile
 import com.freeturn.app.data.Provider
 import com.freeturn.app.ui.HapticUtil
+import com.freeturn.app.viewmodel.ServerViewModel
 import com.freeturn.app.viewmodel.SettingsViewModel
 import com.freeturn.app.viewmodel.SshConnectionState
 import kotlin.math.roundToInt
@@ -69,18 +70,19 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun ClientSetupScreen(
-    viewModel: SettingsViewModel,
+    settingsViewModel: SettingsViewModel,
+    serverViewModel: ServerViewModel,
     showFinishButton: Boolean = false,
     onFinish: (() -> Unit)? = null
 ) {
-    val saved by viewModel.clientConfig.collectAsStateWithLifecycle()
-    val sshConfig by viewModel.sshConfig.collectAsStateWithLifecycle()
-    val sshState by viewModel.sshState.collectAsStateWithLifecycle()
-    val serverState by viewModel.serverState.collectAsStateWithLifecycle()
-    val serverOpts by viewModel.serverOpts.collectAsStateWithLifecycle()
-    val proxyListen by viewModel.proxyListen.collectAsStateWithLifecycle()
-    val privacyMode by viewModel.privacyMode.collectAsStateWithLifecycle()
-    val isRegeneratingObfKey by viewModel.isRegeneratingObfKey.collectAsStateWithLifecycle()
+    val saved by settingsViewModel.clientConfig.collectAsStateWithLifecycle()
+    val sshConfig by serverViewModel.sshConfig.collectAsStateWithLifecycle()
+    val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()
+    val serverState by serverViewModel.serverState.collectAsStateWithLifecycle()
+    val serverOpts by serverViewModel.serverOpts.collectAsStateWithLifecycle()
+    val proxyListen by settingsViewModel.proxyListen.collectAsStateWithLifecycle()
+    val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
+    val isRegeneratingObfKey by serverViewModel.isRegeneratingObfKey.collectAsStateWithLifecycle()
 
     val isSshConnected = sshState is SshConnectionState.Connected
     val serverKnown = serverState as? com.freeturn.app.viewmodel.ServerState.Known
@@ -122,7 +124,7 @@ fun ClientSetupScreen(
     // tcpForward/bond исключены — сохраняются через setTcpForward/setBond с автоперезапуском.
     LaunchedEffect(serverAddress, vkLink, provider, threads, streamsPerCred, useUdp, manualCaptcha, useCarrierDns, localPort, dnsMode, debugMode, magicSwitch, magicTurn) {
         delay(600)
-        viewModel.saveClientConfig(
+        settingsViewModel.saveClientConfig(
             ClientConfig(
                 serverAddress = serverAddress.trim(),
                 vkLink        = vkLink.trim(),
@@ -410,7 +412,7 @@ fun ClientSetupScreen(
                     checked = syncOn,
                     onCheckedChange = {
                         HapticUtil.perform(context, if (it) HapticUtil.Pattern.TOGGLE_ON else HapticUtil.Pattern.TOGGLE_OFF)
-                        viewModel.setSyncServerSwitches(it)
+                        settingsViewModel.setSyncServerSwitches(it)
                     }
                 )
 
@@ -428,7 +430,7 @@ fun ClientSetupScreen(
                     enabled = controlsEnabled,
                     onCheckedChange = {
                         HapticUtil.perform(context, if (it) HapticUtil.Pattern.TOGGLE_ON else HapticUtil.Pattern.TOGGLE_OFF)
-                        viewModel.setTcpForward(it)
+                        settingsViewModel.setTcpForward(it)
                     }
                 )
 
@@ -441,7 +443,7 @@ fun ClientSetupScreen(
                     enabled = effectiveTcpForward,
                     onCheckedChange = {
                         HapticUtil.perform(context, if (it) HapticUtil.Pattern.TOGGLE_ON else HapticUtil.Pattern.TOGGLE_OFF)
-                        viewModel.setBond(it)
+                        settingsViewModel.setBond(it)
                     }
                 )
 
@@ -463,7 +465,7 @@ fun ClientSetupScreen(
                                 enabled = controlsEnabled,
                                 onClick = {
                                     HapticUtil.perform(context, HapticUtil.Pattern.TOGGLE_ON)
-                                    viewModel.setObfProfile(value)
+                                    settingsViewModel.setObfProfile(value)
                                 },
                                 shape = SegmentedButtonDefaults.itemShape(index = idx, count = ObfProfile.ALL.size)
                             ) { Text(obfProfileLabel(value)) }
@@ -523,7 +525,7 @@ fun ClientSetupScreen(
                         androidx.compose.material3.TextButton(
                             onClick = {
                                 HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                                viewModel.setObfKey(obfKeyDraft)
+                                settingsViewModel.setObfKey(obfKeyDraft)
                             },
                             enabled = draftValid,
                             modifier = Modifier.fillMaxWidth()
@@ -536,7 +538,7 @@ fun ClientSetupScreen(
                             androidx.compose.material3.TextButton(
                                 onClick = {
                                     HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                                    viewModel.regenerateObfKey()
+                                    serverViewModel.regenerateObfKey()
                                 },
                                 enabled = !isRegeneratingObfKey,
                                 modifier = Modifier.fillMaxWidth()

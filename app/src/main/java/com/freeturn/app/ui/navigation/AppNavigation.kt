@@ -215,6 +215,7 @@ private fun AppNavHost(
         composable(Routes.CLIENT_SETUP_OB) {
             ClientSetupScreen(
                 settingsViewModel = settingsViewModel,
+                serverViewModel = serverViewModel,
                 showFinishButton = true,
                 onFinish = {
                     settingsViewModel.setOnboardingDone()
@@ -259,6 +260,7 @@ private fun AppNavHost(
         composable(Routes.CLIENT_SETUP) {
             ClientSetupScreen(
                 settingsViewModel = settingsViewModel,
+                serverViewModel = serverViewModel,
                 showFinishButton = false
             )
         }

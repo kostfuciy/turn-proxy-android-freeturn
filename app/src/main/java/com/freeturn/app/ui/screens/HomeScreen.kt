@@ -93,8 +93,6 @@ import com.freeturn.app.viewmodel.SettingsViewModel
 import com.freeturn.app.viewmodel.ProxyViewModel
 import com.freeturn.app.viewmodel.ServerViewModel
 
-import com.freeturn.app.viewmodel.SshConnectionState
-import com.freeturn.app.viewmodel.UpdateState
 import androidx.core.net.toUri
 
 @SuppressLint("BatteryLife")
