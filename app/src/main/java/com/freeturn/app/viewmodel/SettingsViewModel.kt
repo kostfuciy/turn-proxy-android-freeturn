@@ -260,7 +260,7 @@ class SettingsViewModel(
             val storedMatches = current.obfProfile == profile
             val effectiveMatches = known?.obfProfile?.let { it == profile } ?: true
             if (storedMatches && effectiveMatches) return@launch
-            val sync = clientConfig.value.syncServerSwitches
+            val sync = prefs.clientConfigFlow.first().syncServerSwitches
             var next = current.copy(obfProfile = profile)
             if (profile != ObfProfile.NONE && next.obfKey.isBlank() && sync) {
                 val key = sshRepository.generateObfKey()
@@ -294,18 +294,18 @@ class SettingsViewModel(
             if (current.obfKey == trimmed) return@launch
             val next = current.copy(obfKey = trimmed)
             profileMutex.withLock { prefs.saveServerOpts(next) }
-            if (clientConfig.value.syncServerSwitches) restartServerIfRunning()
+            if (prefs.clientConfigFlow.first().syncServerSwitches) restartServerIfRunning()
             restartProxyIfRunning()
         }
     }
 
     fun setTcpForward(enabled: Boolean) {
-        val current = clientConfig.value
-        val known = sshRepository.serverState.value as? ServerState.Known
-        val storedMatches = current.tcpForward == enabled
-        val effectiveMatches = known?.tcpMode?.let { it == enabled } ?: true
-        if (storedMatches && effectiveMatches) return
         viewModelScope.launch {
+            val current = prefs.clientConfigFlow.first()
+            val known = sshRepository.serverState.value as? ServerState.Known
+            val storedMatches = current.tcpForward == enabled
+            val effectiveMatches = known?.tcpMode?.let { it == enabled } ?: true
+            if (storedMatches && effectiveMatches) return@launch
             if (!storedMatches) {
                 val next = current.copy(tcpForward = enabled)
                 profileMutex.withLock { prefs.saveClientConfig(next) }

@@ -100,7 +100,7 @@ class ServerViewModel(
                 return@launch
             }
             val tcpMode = prefs.clientConfigFlow.first().tcpForward
-            val opts = serverOpts.value
+            val opts = prefs.serverOptsFlow.first()
             sshRepository.startServer(
                 listen = l, connect = c,
                 tcpMode = tcpMode,

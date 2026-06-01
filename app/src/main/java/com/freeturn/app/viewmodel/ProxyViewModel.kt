@@ -8,6 +8,7 @@ import com.freeturn.app.data.ClientConfig
 import com.freeturn.app.domain.LocalProxyManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -31,7 +32,8 @@ class ProxyViewModel(
 
     fun startProxy() {
         viewModelScope.launch {
-            proxyManager.startProxy(clientConfig.value)
+            val config = prefs.clientConfigFlow.first()
+            proxyManager.startProxy(config)
         }
     }
 
