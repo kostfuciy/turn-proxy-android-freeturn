@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.freeturn.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.freeturn.app"
@@ -45,7 +45,6 @@ android {
         // WireGuard tunnel-либа тянет java.time/desugar-зависимый код — нужно desugaring.
         isCoreLibraryDesugaringEnabled = true
     }
-    compileSdkMinor = 1
 }
 
 kotlin {
