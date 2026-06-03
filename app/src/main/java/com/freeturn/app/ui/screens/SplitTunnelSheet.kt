@@ -260,12 +260,19 @@ private fun AppList(
         return
     }
 
-    val filtered = remember(installed, query) {
-        if (query.isBlank()) installed
+    // Выбранные пункты поднимаем наверх. Набор фиксируем на момент загрузки списка
+    // (а не на живой `selected`), иначе пункт прыгал бы при каждом тыке чекбокса.
+    // Внутри групп алфавитный порядок сохраняется — installedInternetApps уже
+    // отсортирован, а sortedBy стабильна.
+    val pinned = remember(installed) { selected }
+
+    val filtered = remember(installed, query, pinned) {
+        val base = if (query.isBlank()) installed
         else installed.filter {
             it.label.contains(query, ignoreCase = true) ||
                 it.packageName.contains(query, ignoreCase = true)
         }
+        base.sortedBy { it.packageName !in pinned }
     }
 
     if (filtered.isEmpty()) {
