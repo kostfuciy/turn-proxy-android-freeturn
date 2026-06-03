@@ -11,9 +11,9 @@ android {
         applicationId = "com.freeturn.app"
         // WireGuard GoBackend (com.wireguard.android:tunnel) требует minSdk 24.
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 24
-        versionName = "3.0.0-alpha2"
+        versionName = "3.0.0-alpha3"
     }
 
     packaging {
