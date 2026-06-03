@@ -285,6 +285,8 @@ fun HomeScreen(
         }
 
         // Ссылка-индикатор split-tunneling прямо над свёрнутым листом сервера.
+        // Только в WG-режиме: без конфига WireGuard (proxy-режим) сплит не работает.
+        if (clientConfig.wireGuardActive) {
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -312,6 +314,7 @@ fun HomeScreen(
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
         }
         }
     }
