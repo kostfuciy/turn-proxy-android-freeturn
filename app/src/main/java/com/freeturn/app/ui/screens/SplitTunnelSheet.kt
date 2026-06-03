@@ -102,11 +102,6 @@ fun SplitTunnelSheetContent(
                     stringResource(R.string.split_tunnel_title),
                     style = MaterialTheme.typography.titleLarge
                 )
-                Text(
-                    stringResource(R.string.split_tunnel_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
             Switch(
                 checked = enabled,

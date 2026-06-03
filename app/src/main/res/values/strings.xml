@@ -248,7 +248,6 @@
 
     <!-- Split tunneling -->
     <string name="split_tunnel_title">Раздельное туннелирование</string>
-    <string name="split_tunnel_desc">Какие приложения отправлять в туннель.</string>
     <string name="split_tunnel_mode_label">Режим</string>
     <string name="split_tunnel_mode_include">Только приложения из списка работают через VPN</string>
     <string name="split_tunnel_mode_exclude">Приложения из списка не работают через VPN</string>
