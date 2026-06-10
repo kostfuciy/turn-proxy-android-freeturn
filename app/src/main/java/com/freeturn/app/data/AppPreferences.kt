@@ -143,7 +143,6 @@ class AppPreferences(context: Context) {
         val SSH_USER = stringPreferencesKey("ssh_user")
         val SSH_AUTH_TYPE = stringPreferencesKey("ssh_auth_type")
         val SSH_HOST_FP = stringPreferencesKey("ssh_host_fp")
-        val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val CLIENT_SERVER_ADDR = stringPreferencesKey("client_server_addr")
         val CLIENT_VK_LINK = stringPreferencesKey("client_vk_link")
         val CLIENT_PROVIDER = stringPreferencesKey("client_provider")
@@ -259,8 +258,6 @@ class AppPreferences(context: Context) {
             )
         }
 
-    val onboardingDoneFlow: Flow<Boolean> = prefFlow { prefs -> prefs[ONBOARDING_DONE] ?: false }
-
     val proxyListenFlow: Flow<String> = prefFlow { prefs -> prefs[PROXY_LISTEN] ?: "0.0.0.0:56000" }
 
     val proxyConnectFlow: Flow<String> = prefFlow { prefs -> prefs[PROXY_CONNECT] ?: "127.0.0.1:40537" }
@@ -371,10 +368,6 @@ class AppPreferences(context: Context) {
             prefs[CLIENT_SPLIT_TUNNEL_APPS] = config.splitTunnelApps.trim()
             prefs[CLIENT_LOGS_ENABLED] = config.logsEnabled
         }
-    }
-
-    suspend fun setOnboardingDone(done: Boolean) {
-        context.dataStore.edit { prefs -> prefs[ONBOARDING_DONE] = done }
     }
 
     suspend fun setDynamicTheme(enabled: Boolean) {

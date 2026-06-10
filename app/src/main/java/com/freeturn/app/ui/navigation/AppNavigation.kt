@@ -20,11 +20,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -53,7 +51,6 @@ import com.freeturn.app.ui.screens.ConnectionModeScreen
 import com.freeturn.app.ui.screens.HomeScreen
 import com.freeturn.app.ui.screens.LogsScreen
 import com.freeturn.app.ui.screens.NerdScreen
-import com.freeturn.app.ui.screens.OnboardingScreen
 import com.freeturn.app.ui.screens.ServerDetailScreen
 import com.freeturn.app.ui.screens.ServerManagementScreen
 import com.freeturn.app.ui.screens.ServersListScreen
@@ -66,11 +63,7 @@ import com.freeturn.app.viewmodel.ServerViewModel
 import org.koin.androidx.compose.koinViewModel
 
 object Routes {
-    const val ONBOARDING = "onboarding"
     const val SSH_SETUP = "ssh_setup"              // из настроек сервера
-    const val SSH_SETUP_OB = "ssh_setup_ob"        // только в мастере онбординга
-    const val SERVER_MANAGEMENT_OB = "server_management_ob" // только в мастере онбординга
-    const val CLIENT_SETUP_OB = "client_setup_onboarding"
 
     // Графы вкладок нижнего меню. У каждой вкладки свой back-stack: бар виден на всех
     // уровнях вложенности, повторный тап по активной вкладке возвращает в её корень.
@@ -113,28 +106,21 @@ fun AppNavigation(
 ) {
     val isInitialized by settingsViewModel.isInitialized.collectAsStateWithLifecycle()
 
-    // Не строим NavHost пока DataStore не загружен — иначе startDestination
-    // захватит дефолтный onboardingDone=false и всегда покажет онбординг
+    // Не строим UI пока DataStore не загружен — иначе showTgDialog захватит
+    // дефолтный tgSubscribeShown=false и диалог мигнёт у тех, кто его уже закрыл.
     if (!isInitialized) return
 
     val proxyState by proxyViewModel.proxyState.collectAsStateWithLifecycle()
-    val initialOnboardingDone by settingsViewModel.initialOnboardingDone.collectAsStateWithLifecycle()
     val initialTgSubscribeShown by settingsViewModel.initialTgSubscribeShown.collectAsStateWithLifecycle()
-    val startDestination = remember { if (initialOnboardingDone) Routes.HOME_GRAPH else Routes.ONBOARDING }
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
-    // Бар виден, когда текущий экран принадлежит одному из графов-вкладок (т.е. не
-    // онбординг). hierarchy включает родительский граф на любом уровне вложенности.
-    val showNavSuite = navItems.any { item ->
-        destination?.hierarchy?.any { it.route == item.graphRoute } == true
-    }
 
-    var showTgDialog by rememberSaveable { mutableStateOf(!initialTgSubscribeShown && initialOnboardingDone) }
+    var showTgDialog by rememberSaveable { mutableStateOf(!initialTgSubscribeShown) }
 
-    val adaptiveType = NavigationSuiteScaffoldDefaults
+    // Все маршруты живут внутри графов-вкладок — бар виден всегда.
+    val layoutType = NavigationSuiteScaffoldDefaults
         .calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
-    val layoutType = if (showNavSuite) adaptiveType else NavigationSuiteType.None
 
     val context = LocalContext.current
 
@@ -178,8 +164,7 @@ fun AppNavigation(
             navController = navController,
             settingsViewModel = settingsViewModel,
             proxyViewModel = proxyViewModel,
-            serverViewModel = serverViewModel,
-            startDestination = startDestination
+            serverViewModel = serverViewModel
         )
     }
 
@@ -217,8 +202,7 @@ private fun AppNavHost(
     navController: NavHostController,
     settingsViewModel: SettingsViewModel,
     proxyViewModel: ProxyViewModel,
-    serverViewModel: ServerViewModel,
-    startDestination: String
+    serverViewModel: ServerViewModel
 ) {
     // Reduced-motion (системная «Убрать анимации»): мгновенные переходы без слайда.
     // MotionScheme.expressive() в теме рулит моушеном самих m3-компонентов; здесь —
@@ -226,7 +210,7 @@ private fun AppNavHost(
     val reducedMotion = LocalReducedMotion.current
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = Routes.HOME_GRAPH,
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(),
@@ -252,61 +236,6 @@ private fun AppNavHost(
                 slideOutHorizontally(tween(NAV_SLIDE_MS, easing = EmphasizedEasing)) { it / 12 }
         }
     ) {
-        // Онбординг-мастер (вне графов-вкладок → нижнее меню скрыто)
-        composable(Routes.ONBOARDING) {
-            OnboardingScreen(
-                onSetupServer = { navController.navigate(Routes.SSH_SETUP_OB) },
-                onSkip = {
-                    settingsViewModel.setOnboardingDone()
-                    navController.navigate(Routes.HOME_GRAPH) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
-        composable(Routes.SSH_SETUP_OB) {
-            SshSetupScreen(
-                serverViewModel = serverViewModel,
-                settingsViewModel = settingsViewModel,
-                onConnected = {
-                    navController.navigate(Routes.SERVER_MANAGEMENT_OB) {
-                        popUpTo(Routes.SSH_SETUP_OB) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Routes.SERVER_MANAGEMENT_OB) {
-            ServerManagementScreen(
-                serverViewModel = serverViewModel,
-                settingsViewModel = settingsViewModel,
-                onContinue = {
-                    navController.navigate(Routes.CLIENT_SETUP_OB) {
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
-        composable(Routes.CLIENT_SETUP_OB) {
-            ClientSetupScreen(
-                settingsViewModel = settingsViewModel,
-                serverViewModel = serverViewModel,
-                showFinishButton = true,
-                onFinish = {
-                    settingsViewModel.setOnboardingDone()
-                    navController.navigate(Routes.HOME_GRAPH) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
         // Вкладка «Главная». Вход в экран логов живёт в шапке Home (кнопка видна при
         // включённом «Показывать логи») и открывается в стеке этой же вкладки.
         navigation(startDestination = Routes.HOME, route = Routes.HOME_GRAPH) {
@@ -414,8 +343,7 @@ private fun AppNavHost(
                     settingsViewModel = settingsViewModel,
                     serverViewModel = serverViewModel,
                     profileId = id,
-                    onBack = { navController.popBackStack() },
-                    showFinishButton = false
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -425,9 +353,7 @@ private fun AppNavHost(
                     settingsViewModel = settingsViewModel,
                     // Форма поверх настроек сервера — после успеха возвращаемся назад.
                     onConnected = { navController.popBackStack() },
-                    onBack = { navController.popBackStack() },
-                    // Профиль мог быть удалён, пока экран висел в стеке вкладки — выходим назад.
-                    popWhenNoProfiles = true
+                    onBack = { navController.popBackStack() }
                 )
             }
         }

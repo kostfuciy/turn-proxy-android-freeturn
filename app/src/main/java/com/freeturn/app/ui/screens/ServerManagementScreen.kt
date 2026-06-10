@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,17 +31,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.freeturn.app.R
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -89,21 +85,17 @@ import com.freeturn.app.viewmodel.serverSettingsAvailable
 fun ServerManagementScreen(
     serverViewModel: ServerViewModel,
     settingsViewModel: SettingsViewModel,
-    // Шаг мастера онбординга «продолжить к настройке клиента». В settings-флоу не нужен.
-    onContinue: (() -> Unit)? = null,
-    // Кнопка смены сервера (overflow ⋮). null в онбординге.
+    // Кнопка смены сервера (overflow ⋮).
     onEditConnection: (() -> Unit)? = null,
-    // null = онбординг/legacy. Не-null = настройки сервера конкретного профиля (Settings).
+    // null = legacy. Не-null = настройки сервера конкретного профиля (Settings).
     profileId: String? = null,
-    onBack: (() -> Unit)? = null
+    onBack: () -> Unit
 ) {
-    // Settings-флоу vs мастер онбординга. В settings: apply-модель (черновики → «Применить»,
-    // один рестарт), карточки сопряжения, смена сервера. В онбординге — proxy + действия.
-    val settingsFlow = onBack != null
     val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
     val profile = profileId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
     // Живая SSH-сессия и состояние сервера принадлежат активному серверу. Управлять
-    // ядром можно только когда редактируемый профиль активен (или онбординг).
+    // ядром можно только когда редактируемый профиль активен (legacy-режим без id
+    // считается активным).
     val isActive = profileId == null || profileId == snapshot.activeId
     val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()
     val serverState by serverViewModel.serverState.collectAsStateWithLifecycle()
@@ -132,9 +124,8 @@ fun ServerManagementScreen(
     var obfDraft by rememberSaveable(effServer.obfProfile) { mutableStateOf(effServer.obfProfile) }
     var keyDraft by rememberSaveable(effServer.obfKey) { mutableStateOf(effServer.obfKey) }
 
-    // SSH-сессию держит хаб (ServerDetailScreen): этот экран в settings-флоу открыт только
-    // при активном подключении, в онбординг сюда приходят уже Connected. Свой реконнект
-    // не нужен — не дублируем коннект на двух экранах.
+    // SSH-сессию держит хаб (ServerDetailScreen): этот экран открыт только при активном
+    // подключении. Свой реконнект не нужен — не дублируем коннект на двух экранах.
 
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -144,16 +135,15 @@ fun ServerManagementScreen(
     val isConnected = isActive && sshState is SshConnectionState.Connected
     val syncOn = effClient.syncServerSwitches
     val isWorking = serverState is ServerState.Working || serverState is ServerState.Checking
-    val serverKnown = serverState as? ServerState.Known
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     // --- Dirty-детект для apply-модели ---
     val listenFull = "${proxyListenIp.ifBlank { "0.0.0.0" }}:$proxyListenPort"
     val proxyDirty = listenFull != savedListen || proxyConnect != savedConnect
-    val configDirty = settingsFlow && (proxyDirty ||
+    val configDirty = proxyDirty ||
         tcpDraft != effClient.tcpForward ||
         obfDraft != effServer.obfProfile ||
-        keyDraft != effServer.obfKey)
+        keyDraft != effServer.obfKey
     // Ключ валиден для применения: обфускация выкл, 64 hex, либо пусто при живом SSH
     // и sync ON — только тогда applyServerConfig сгенерит ключ на сервере. Иначе пустой
     // ключ блокирует apply: в конфиг уехала бы обфускация без ключа, которую CoreArgs
@@ -164,7 +154,7 @@ fun ServerManagementScreen(
     // Плавающий «Применить» виден только когда есть что применять: фиксирует весь черновик
     // одним рестартом и уходит назад в хаб. Невалидный/занятый стейт — FAB просто прячется
     // (поле obf-ключа само подсвечивает ошибку), действие появляется когда оно осмысленно.
-    val canApply = settingsFlow && serverSettingsAvailable(isConnected, syncOn) &&
+    val canApply = serverSettingsAvailable(isConnected, syncOn) &&
         configDirty && keyOkForApply && !isWorking
     fun applyConfig() {
         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
@@ -176,26 +166,20 @@ fun ServerManagementScreen(
                 settingsViewModel.applyProfileServerConfig(it, listenFull, proxyConnect, tcpDraft, obfDraft, keyDraft)
             }
         }
-        onBack?.invoke()
+        onBack()
     }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
-                title = {
-                    Text(stringResource(
-                        if (onBack != null) R.string.provider_server_settings else R.string.server
-                    ))
-                },
+                title = { Text(stringResource(R.string.provider_server_settings)) },
                 navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                painterResource(R.drawable.arrow_back_24px),
-                                contentDescription = stringResource(R.string.back)
-                            )
-                        }
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            painterResource(R.drawable.arrow_back_24px),
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -244,9 +228,8 @@ fun ServerManagementScreen(
                 )
             }
         },
-        // Settings-флоу (onBack != null) — внутри NavigationSuite, бар держит навбар-инсет.
-        // Онбординг (onBack == null) — полноэкранный, инсет держим сами.
-        contentWindowInsets = if (onBack != null) WindowInsets(0, 0, 0, 0) else WindowInsets.navigationBars
+        // Экран внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -290,7 +273,7 @@ fun ServerManagementScreen(
                 LaunchedEffect(isConnected) {
                     if (isConnected) lostVisible = false else { delay(400); lostVisible = true }
                 }
-                if (!isConnected && (syncOn || !settingsFlow)) {
+                if (!isConnected && syncOn) {
                     if (sshState is SshConnectionState.Error || lostVisible) {
                         val isErr = sshState is SshConnectionState.Error
                         HeroCard(
@@ -376,7 +359,7 @@ fun ServerManagementScreen(
 
                 // --- Синхронные настройки (apply-модель) ---
                 // Гейт общий со входом в экран (ServerDetailScreen) — serverSettingsAvailable.
-                if (settingsFlow && serverSettingsAvailable(isConnected, syncOn)) {
+                if (serverSettingsAvailable(isConnected, syncOn)) {
                     SectionLabel(stringResource(R.string.server_sync_section))
                     SettingsCard {
                         // Проброс: UDP / TCP.
@@ -485,76 +468,6 @@ fun ServerManagementScreen(
                         }
                     }
 
-                }
-
-                // --- SSH-only операции: Install / Start / Stop / Continue ---
-                // Только онбординг (onBack == null). В settings-флоу управление ядром живёт
-                // в меню ⋮ хаба (ServerDetailScreen) — тут оставляем лишь конфиг + журналы.
-                if (isConnected && onBack == null) {
-                    FilledTonalButton(
-                        onClick = {
-                            HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                            settingsViewModel.saveProxyServerConfig("${proxyListenIp.ifBlank { "0.0.0.0" }}:$proxyListenPort", proxyConnect)
-                            serverViewModel.installServer()
-                        },
-                        enabled = !isWorking,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                        Icon(painterResource(R.drawable.cloud_download_24px), null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.install))
-                    }
-
-                    Button(
-                        onClick = {
-                            HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                            settingsViewModel.saveProxyServerConfig("${proxyListenIp.ifBlank { "0.0.0.0" }}:$proxyListenPort", proxyConnect)
-                            serverViewModel.startServer()
-                        },
-                        enabled = !isWorking && serverKnown?.installed == true && !serverKnown.running,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                        Icon(painterResource(R.drawable.play_arrow_24px), null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.start_server))
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                            serverViewModel.stopServer()
-                        },
-                        enabled = !isWorking && serverKnown?.running == true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(painterResource(R.drawable.stop_24px), null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.stop_server))
-                    }
-
-                    // «Продолжить к настройке клиента» — шаг мастера онбординга. Весь блок
-                    // уже под onBack == null, так что отдельная проверка тут не нужна.
-                    if (serverKnown?.running == true) {
-                        Spacer(Modifier.height(4.dp))
-                        Button(
-                            onClick = {
-                                HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                                onContinue?.invoke()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Text(stringResource(R.string.continue_client_setup))
-                            Spacer(Modifier.width(8.dp))
-                            Icon(painterResource(R.drawable.arrow_forward_24px), null)
-                        }
-                    }
                 }
 
                 // Клиренс под плавающую кнопку, чтобы FAB не перекрывал нижний контент.

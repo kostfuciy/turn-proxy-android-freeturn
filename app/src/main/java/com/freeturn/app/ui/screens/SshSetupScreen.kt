@@ -80,18 +80,14 @@ fun SshSetupScreen(
     serverViewModel: ServerViewModel,
     settingsViewModel: SettingsViewModel,
     onConnected: () -> Unit,
-    onBack: () -> Unit,
-    // Settings-флоу: экран не профиль-скоупный (правит активный SSH). true — выходим назад,
-    // если все профили удалены (напр. с главного экрана), пока экран висел в стеке вкладки:
-    // иначе заполнение формы writes в осиротевший конфиг. В онбординге профиля ещё нет → false.
-    popWhenNoProfiles: Boolean = false
+    onBack: () -> Unit
 ) {
-    if (popWhenNoProfiles) {
-        val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
-        if (snapshot.loaded && snapshot.list.isEmpty()) {
-            LaunchedEffect(Unit) { onBack() }
-            return
-        }
+    // Экран не профиль-скоупный (правит активный SSH). Все профили удалены, пока экран
+    // висел в стеке вкладки — выходим назад: иначе форма пишет в осиротевший конфиг.
+    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    if (snapshot.loaded && snapshot.list.isEmpty()) {
+        LaunchedEffect(Unit) { onBack() }
+        return
     }
 
     val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()

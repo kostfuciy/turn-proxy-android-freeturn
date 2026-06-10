@@ -8,7 +8,6 @@
     <string name="proxy_connecting">Подключение…</string>
     <string name="proxy_press_to_start">Нажмите для запуска</string>
     <string name="proxy_captcha_required">Требуется прохождение капчи</string>
-    <string name="server">Сервер</string>
     <string name="tcp">TCP</string>
     <string name="udp">UDP</string>
     <string name="ssh_connecting">SSH: сопряжение…</string>
@@ -74,7 +73,6 @@
     <string name="dns_custom_label">DNS-серверы (вручную)</string>
     <string name="dns_custom_hint">Через запятую/пробел. Приоритет над DNS оператора. Пусто — не задавать.</string>
     <string name="dns_custom_invalid">Часть значений не похожа на DNS-адреса — они будут пропущены</string>
-    <string name="finish_setup">Завершить настройку</string>
 
     <string name="obf_select_profile_hint">Выберите профиль rtpopus, чтобы задать ключ обфускации.</string>
     <string name="obf_key_manual_hint">Без SSH-подключения введите/вставьте 64-hex ключ вручную.</string>
@@ -96,14 +94,12 @@
     <string name="turn_client_address">Адрес TURN‑клиента</string>
     <string name="turn_client_placeholder">127.0.0.1:40537</string>
     <string name="turn_client_desc">Локальный WireGuard/Xray-клиент на стороне сервера</string>
-    <string name="install">Установить / обновить</string>
     <string name="server_install">Установить</string>
     <string name="server_update">Обновить</string>
     <string name="server_obf_key_label">Obf-ключ (64 hex)</string>
     <string name="obf_key_regen">Сгенерировать новый ключ на сервере</string>
     <string name="start_server">Запустить сервер</string>
     <string name="stop_server">Остановить сервер</string>
-    <string name="continue_client_setup">Продолжить настройку клиента</string>
     <string name="ssh_log_title">SSH-лог</string>
     <string name="ssh_log_fetch_journal">Журнал сервера</string>
     <string name="ssh_log_empty">Лог пуст</string>
@@ -127,13 +123,6 @@
     <string name="step_connecting">Сопряжение с сервером…</string>
     <string name="step_auth">Аутентификация…</string>
     <string name="step_ssh_check">Проверка SSH…</string>
-
-    <!-- OnboardingScreen -->
-    <string name="onboarding_title">Free Turn</string>
-    <string name="onboarding_subtitle">Проксируйте WireGuard/Xray трафик\nчерез TURN‑сервера</string>
-    <string name="privacy_notice">Мы не собираем никаких данных. Все настройки (SSH-доступ, параметры прокси) хранятся исключительно на вашем устройстве.</string>
-    <string name="setup_server">Настроить сервер</string>
-    <string name="skip_setup">Пропустить настройки</string>
 
     <!-- Update -->
     <string name="update_title">Обновление</string>

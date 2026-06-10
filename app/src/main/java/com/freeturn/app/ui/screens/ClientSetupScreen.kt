@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -69,21 +68,14 @@ import com.freeturn.app.viewmodel.SettingsViewModel
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
-/**
- * @param showFinishButton  true — онбординг-флоу, показываем кнопку «Завершить».
- *                          false — вкладка, авто-сохранение без кнопки.
- * @param onFinish  вызывается после нажатия кнопки «Завершить» (только если showFinishButton=true).
- */
 @Composable
 fun ClientSetupScreen(
     settingsViewModel: SettingsViewModel,
     serverViewModel: ServerViewModel,
-    // null = онбординг/legacy-режим (профиль ещё не создан, пишем в legacy-ключи).
+    // null = legacy-режим (профиль ещё не создан, пишем в legacy-ключи).
     // не-null = редактируем конкретный профиль по id (Settings-флоу).
     profileId: String? = null,
-    onBack: (() -> Unit)? = null,
-    showFinishButton: Boolean = false,
-    onFinish: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null
 ) {
     val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
     val legacyClient by settingsViewModel.clientConfig.collectAsStateWithLifecycle()
@@ -92,10 +84,10 @@ fun ClientSetupScreen(
     val legacyProxyListen by settingsViewModel.proxyListen.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
 
-    // Источник данных: конкретный профиль по id либо legacy (онбординг).
+    // Источник данных: конкретный профиль по id либо legacy-конфиг.
     val profile = profileId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
     val saved = profile?.client ?: legacyClient
-    // Активный профиль (или онбординг) рулит живым рантаймом: SSH-сессия, рестарты,
+    // Активный профиль (или legacy-режим) рулит живым рантаймом: SSH-сессия, рестарты,
     // sync с сервером. Для неактивного редактируем только хранимые данные.
     val isActive = profileId == null || profileId == snapshot.activeId
     val effSshIp = profile?.ssh?.ip ?: sshConfig.ip
@@ -410,19 +402,6 @@ fun ClientSetupScreen(
                                 supportingText = { Text(stringResource(R.string.magic_switch_address_support)) }
                             )
                         }
-                    }
-                }
-
-                // Кнопка «Завершить» — только в онбординг-флоу.
-                if (showFinishButton && onFinish != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Button(
-                        onClick = onFinish,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = serverAddress.isNotBlank() && vkLink.isNotBlank(),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                        Text(stringResource(R.string.finish_setup), style = MaterialTheme.typography.labelLarge)
                     }
                 }
 

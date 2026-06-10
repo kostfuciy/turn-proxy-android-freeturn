@@ -66,9 +66,6 @@ class SettingsViewModel(
     private val _isInitialized = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
-    private val _initialOnboardingDone = MutableStateFlow(false)
-    val initialOnboardingDone: StateFlow<Boolean> = _initialOnboardingDone.asStateFlow()
-
     private val _initialTgSubscribeShown = MutableStateFlow(false)
     val initialTgSubscribeShown: StateFlow<Boolean> = _initialTgSubscribeShown.asStateFlow()
 
@@ -85,10 +82,7 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            val done = prefs.onboardingDoneFlow.first()
-            val tgShown = prefs.tgSubscribeShownFlow.first()
-            _initialOnboardingDone.value = done
-            _initialTgSubscribeShown.value = tgShown
+            _initialTgSubscribeShown.value = prefs.tgSubscribeShownFlow.first()
             // Восстанавливаем сохранённое состояние тоггла логов при старте.
             ProxyServiceState.setLogsEnabled(prefs.clientConfigFlow.first().logsEnabled)
             _isInitialized.value = true
@@ -112,12 +106,8 @@ class SettingsViewModel(
         viewModelScope.launch { prefs.setTgSubscribeShown() }
     }
 
-    fun setOnboardingDone() {
-        viewModelScope.launch { prefs.setOnboardingDone(true) }
-    }
-
     // expectedActiveId — профиль, который правил экран. Сменился за время дебаунса —
-    // сейв отбрасываем, иначе старые поля затрут чужой профиль. null — онбординг.
+    // сейв отбрасываем, иначе старые поля затрут чужой профиль. null — legacy-режим.
     fun saveClientConfig(config: ClientConfig, expectedActiveId: String? = null) {
         viewModelScope.launch {
             val saved = profileMutex.withLock {
