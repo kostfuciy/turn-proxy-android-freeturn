@@ -72,31 +72,31 @@ import kotlinx.coroutines.delay
 fun ClientSetupScreen(
     settingsViewModel: SettingsViewModel,
     serverViewModel: ServerViewModel,
-    // null = legacy-режим (профиль ещё не создан, пишем в legacy-ключи).
-    // не-null = редактируем конкретный профиль по id (Settings-флоу).
-    profileId: String? = null,
+    // null = legacy-режим (сервер ещё не создан, пишем в legacy-ключи).
+    // не-null = редактируем конкретный сервер по id (Settings-флоу).
+    serverId: String? = null,
     onBack: (() -> Unit)? = null
 ) {
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val legacyClient by settingsViewModel.clientConfig.collectAsStateWithLifecycle()
     val sshConfig by serverViewModel.sshConfig.collectAsStateWithLifecycle()
     val serverState by serverViewModel.serverState.collectAsStateWithLifecycle()
     val legacyProxyListen by settingsViewModel.proxyListen.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
 
-    // Источник данных: конкретный профиль по id либо legacy-конфиг.
-    val profile = profileId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
-    val saved = profile?.client ?: legacyClient
-    // Активный профиль (или legacy-режим) рулит живым рантаймом: SSH-сессия, рестарты,
+    // Источник данных: конкретный сервер по id либо legacy-конфиг.
+    val server = serverId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
+    val saved = server?.client ?: legacyClient
+    // Активный сервер (или legacy-режим) рулит живым рантаймом: SSH-сессия, рестарты,
     // sync с сервером. Для неактивного редактируем только хранимые данные.
-    val isActive = profileId == null || profileId == snapshot.activeId
-    val effSshIp = profile?.ssh?.ip ?: sshConfig.ip
-    val effProxyListen = profile?.proxyListen ?: legacyProxyListen
+    val isActive = serverId == null || serverId == snapshot.activeId
+    val effSshIp = server?.ssh?.ip ?: sshConfig.ip
+    val effProxyListen = server?.proxyListen ?: legacyProxyListen
 
-    // Единая точка записи client-конфига: профиль by-id либо legacy.
+    // Единая точка записи client-конфига: сервер by-id либо legacy.
     fun clientEdit(transform: (ClientConfig) -> ClientConfig) {
-        if (profileId != null) {
-            settingsViewModel.updateProfileClient(profileId, transform)
+        if (serverId != null) {
+            settingsViewModel.updateServerClient(serverId, transform)
         } else {
             settingsViewModel.saveClientConfig(transform(settingsViewModel.clientConfig.value), snapshot.activeId)
         }
@@ -112,7 +112,7 @@ fun ClientSetupScreen(
     val context = LocalContext.current
 
     // remember, НЕ rememberSaveable: rememberSaveable восстановил бы stale-поля из
-    // bundle при возврате на экран, и авто-сейв зеркалил бы их в чужой профиль.
+    // bundle при возврате на экран, и авто-сейв зеркалил бы их в чужой сервер.
     var serverAddress by remember(saved.serverAddress) { mutableStateOf(saved.serverAddress) }
     var vkLink       by remember(saved.vkLink)         { mutableStateOf(saved.vkLink) }
     var threads      by remember(saved.threads)        { mutableFloatStateOf(saved.threads.toFloat()) }
@@ -130,7 +130,7 @@ fun ClientSetupScreen(
     }
 
     // Авто-сохранение с дебаунсом 600 мс для текстовых полей и ползунков.
-    // clientEdit сам маршрутизирует запись в профиль by-id либо в legacy и под
+    // clientEdit сам маршрутизирует запись в сервер by-id либо в legacy и под
     // mutex сверяет цель — защита от гонки переключения за время дебаунса.
     LaunchedEffect(
         serverAddress, vkLink, threads, streamsPerCred, localPort, magicTurn, customDns

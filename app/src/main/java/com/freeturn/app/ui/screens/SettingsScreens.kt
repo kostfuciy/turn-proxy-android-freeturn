@@ -86,7 +86,7 @@ import androidx.compose.ui.text.font.FontFamily
 import com.freeturn.app.R
 import com.freeturn.app.data.CoreArgs
 import com.freeturn.app.data.ObfProfile
-import com.freeturn.app.data.Profile
+import com.freeturn.app.data.Server
 import com.freeturn.app.domain.server.ServerCommand
 import com.freeturn.app.domain.server.ServerOptions
 import com.freeturn.app.ui.HapticUtil
@@ -237,14 +237,14 @@ fun AdvancedScreen(
     }
 }
 
-/** Список добавленных серверов (профилей). Клик по серверу → его детальный экран. */
+/** Список добавленных серверов. Клик по серверу → его детальный экран. */
 @Composable
 fun ServersListScreen(
     settingsViewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenServer: (String) -> Unit
 ) {
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -277,14 +277,14 @@ fun ServersListScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                // Активный профиль закрепляем сверху — быстрый доступ к текущему серверу.
+                // Активный сервер закрепляем сверху — быстрый доступ к нему.
                 val ordered = remember(snapshot.list, snapshot.activeId) {
                     snapshot.list.sortedByDescending { it.id == snapshot.activeId }
                 }
                 SettingsGroup {
                     ordered.forEachIndexed { index, p ->
                         ServerListRow(
-                            profile = p,
+                            server = p,
                             isActive = snapshot.activeId == p.id,
                             privacyMode = privacyMode,
                             shape = settingsItemShape(index, ordered.size),
@@ -299,7 +299,7 @@ fun ServersListScreen(
 
 @Composable
 private fun ServerListRow(
-    profile: Profile,
+    server: Server,
     isActive: Boolean,
     privacyMode: Boolean,
     shape: Shape,
@@ -308,11 +308,11 @@ private fun ServerListRow(
     // Подзаголовок: адрес сервера + метка «SSH», если сопряжение настроено. Сам SSH-ip
     // не дублируем (он уже не несёт пользе в списке) — достаточно факта наличия.
     val sub = listOfNotNull(
-        profile.client.serverAddress.takeIf { it.isNotBlank() }?.redact(privacyMode),
-        stringResource(R.string.profile_has_ssh).takeIf { profile.ssh.ip.isNotBlank() }
+        server.client.serverAddress.takeIf { it.isNotBlank() }?.redact(privacyMode),
+        stringResource(R.string.server_has_ssh).takeIf { server.ssh.ip.isNotBlank() }
     ).joinToString(" · ").ifBlank { "—" }
     ServerRow(
-        name = profile.name,
+        name = server.name,
         subtitle = sub,
         isActive = isActive,
         shape = shape,
@@ -327,7 +327,7 @@ private fun ServerListRow(
  */
 @Composable
 fun ServerDetailScreen(
-    profileId: String,
+    serverId: String,
     settingsViewModel: SettingsViewModel,
     serverViewModel: ServerViewModel,
     onBack: () -> Unit,
@@ -338,27 +338,27 @@ fun ServerDetailScreen(
     onConfigureSsh: () -> Unit
 ) {
     val context = LocalContext.current
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()
     val sshConfig by serverViewModel.sshConfig.collectAsStateWithLifecycle()
     val coreStatus by serverViewModel.hubStatus.collectAsStateWithLifecycle()
     val nerdMode by settingsViewModel.nerdMode.collectAsStateWithLifecycle()
-    val profile = snapshot.list.firstOrNull { it.id == profileId }
-    val isActive = snapshot.activeId == profileId
+    val server = snapshot.list.firstOrNull { it.id == serverId }
+    val isActive = snapshot.activeId == serverId
 
-    // Профиль удалён (например, из этого же экрана) — выходим назад.
-    if (snapshot.loaded && profile == null) {
+    // Сервер удалён (например, из этого же экрана) — выходим назад.
+    if (snapshot.loaded && server == null) {
         LaunchedEffect(Unit) { onBack() }
         return
     }
 
-    // Единая статус-модель хаба: core-статус от VM (активный сервер) + profile-контекст.
+    // Единая статус-модель хаба: core-статус от VM (активный сервер) + server-контекст.
     // Порядок гарантирует отсутствие мигания: пока снапшот не загружен — skeleton, а не Offline.
     val status: ServerHubStatus = when {
         !snapshot.loaded -> ServerHubStatus.Connecting
         !isActive -> ServerHubStatus.Offline
-        profile?.ssh?.ip.isNullOrBlank() -> ServerHubStatus.NotPaired
+        server?.ssh?.ip.isNullOrBlank() -> ServerHubStatus.NotPaired
         else -> coreStatus
     }
     // Вход в «Настройки сервера» доступен только при живом ядре (Online).
@@ -382,7 +382,7 @@ fun ServerDetailScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     // Подзаголовок hero-шапки: адрес сервера либо SSH-ip (что есть).
-    val headerSubtitle = profile?.let { p ->
+    val headerSubtitle = server?.let { p ->
         p.client.serverAddress.takeIf { it.isNotBlank() }?.redact(privacyMode)
             ?: p.ssh.ip.takeIf { it.isNotBlank() }?.let { "SSH ${it.redact(privacyMode)}" }
     }
@@ -392,7 +392,7 @@ fun ServerDetailScreen(
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(profile?.name ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(server?.name ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 subtitle = headerSubtitle?.let { sub ->
                     { Text(sub, maxLines = 1, overflow = TextOverflow.Ellipsis) }
@@ -503,15 +503,15 @@ fun ServerDetailScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (profile != null) {
+                if (server != null) {
                     // SSH не настроен → синхронизировать нечего: тоггл гасим и держим OFF.
-                    val sshConfigured = profile.ssh.ip.isNotBlank()
+                    val sshConfigured = server.ssh.ip.isNotBlank()
                     ServerStatusCard(
                         status = status,
-                        syncOn = sshConfigured && profile.client.syncServerSwitches,
+                        syncOn = sshConfigured && server.client.syncServerSwitches,
                         onActivate = {
                             HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                            settingsViewModel.applyProfile(profileId)
+                            settingsViewModel.applyServer(serverId)
                         },
                         onRetry = {
                             HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
@@ -528,11 +528,11 @@ fun ServerDetailScreen(
                         SettingsSwitchRow(
                             title = stringResource(R.string.sync_server_switches),
                             iconRes = R.drawable.cached_24px,
-                            checked = sshConfigured && profile.client.syncServerSwitches,
+                            checked = sshConfigured && server.client.syncServerSwitches,
                             enabled = sshConfigured,
                             onCheckedChange = { v ->
                                 if (isActive) settingsViewModel.setSyncServerSwitches(v)
-                                else settingsViewModel.updateProfileClient(profileId) { it.copy(syncServerSwitches = v) }
+                                else settingsViewModel.updateServerClient(serverId) { it.copy(syncServerSwitches = v) }
                             }
                         )
                     }
@@ -542,15 +542,15 @@ fun ServerDetailScreen(
                 // «Настройки сервера»: при sync ON правки пушатся на сервер → нужен живой
                 // SSH; при sync OFF клиент-локальны → вход доступен и оффлайн. Правило
                 // общее с ServerManagementScreen — serverSettingsAvailable.
-                val syncOn = profile?.client?.syncServerSwitches == true
+                val syncOn = server?.client?.syncServerSwitches == true
                 // Connecting/Working — transient: SSH ещё поднимается. Пункт не должен мигать,
                 // держим его видимым на время подключения (сам экран при входе покажет
                 // дебаунс-карту потери связи, а не пустоту). Прячем только в терминальных
                 // disconnected-состояниях (Failed/NotPaired) при sync ON.
                 val connecting = status is ServerHubStatus.Connecting || status is ServerHubStatus.Working
-                // Без isActive-гейта: неактивный профиль форсит status=Offline → connected/connecting=false,
+                // Без isActive-гейта: неактивный сервер форсит status=Offline → connected/connecting=false,
                 // поэтому serverSettingsAvailable даёт true только при sync OFF (клиент-локальные настройки),
-                // а при sync ON остаётся скрытым (пушить на сервер нечем без живого SSH активного профиля).
+                // а при sync ON остаётся скрытым (пушить на сервер нечем без живого SSH активного сервера).
                 val showServerSettings = serverSettingsAvailable(connected || connecting, syncOn)
                 val entryCount = if (showServerSettings) 3 else 2
                 SettingsGroup {
@@ -559,7 +559,7 @@ fun ServerDetailScreen(
                             iconRes = R.drawable.mobile_24px,
                             title = stringResource(R.string.provider_connection_settings),
                             subtitle = stringResource(R.string.provider_connection_settings_desc),
-                            onClick = { onOpenConnection(profileId) }
+                            onClick = { onOpenConnection(serverId) }
                         )
                     }
                     SettingsGroupItem(1, entryCount) {
@@ -567,7 +567,7 @@ fun ServerDetailScreen(
                             iconRes = R.drawable.wifi_24px,
                             title = stringResource(R.string.connection_mode_title),
                             subtitle = stringResource(R.string.provider_connection_mode_desc),
-                            onClick = { onOpenConnectionMode(profileId) }
+                            onClick = { onOpenConnectionMode(serverId) }
                         )
                     }
                     if (showServerSettings) {
@@ -576,7 +576,7 @@ fun ServerDetailScreen(
                                 iconRes = R.drawable.database_24px,
                                 title = stringResource(R.string.provider_server_settings),
                                 subtitle = stringResource(R.string.provider_server_settings_desc),
-                                onClick = { onOpenServerSettings(profileId) }
+                                onClick = { onOpenServerSettings(serverId) }
                             )
                         }
                     }
@@ -584,13 +584,13 @@ fun ServerDetailScreen(
 
                 // «Отладочная информация» — отдельный экран, вход гейтится глобальным
                 // nerdMode (Продвинутые → Режим отладки).
-                if (nerdMode && profile != null) {
+                if (nerdMode && server != null) {
                     SettingsCard {
                         SettingsEntryRow(
                             iconRes = R.drawable.terminal_24px,
                             title = stringResource(R.string.nerd_section_title),
                             subtitle = stringResource(R.string.nerd_section_desc),
-                            onClick = { onOpenNerdInfo(profileId) }
+                            onClick = { onOpenNerdInfo(serverId) }
                         )
                     }
                 }
@@ -598,24 +598,24 @@ fun ServerDetailScreen(
         }
     }
 
-    if (showDelete && profile != null) {
+    if (showDelete && server != null) {
         AlertDialog(
             onDismissRequest = { showDelete = false },
             title = { Text(stringResource(R.string.server_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.server_delete_confirm_desc, profile.name)) },
+            text = { Text(stringResource(R.string.server_delete_confirm_desc, server.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         HapticUtil.perform(context, HapticUtil.Pattern.ERROR)
-                        settingsViewModel.deleteProfile(profileId)
+                        settingsViewModel.deleteServer(serverId)
                         showDelete = false
-                        // Навигацию назад делает null-guard выше (profile станет null
+                        // Навигацию назад делает null-guard выше (server станет null
                         // после async-удаления) — не зовём pop тут, иначе двойной pop.
                     },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
-                ) { Text(stringResource(R.string.profile_delete)) }
+                ) { Text(stringResource(R.string.server_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = { showDelete = false }) { Text(stringResource(R.string.cancel)) }
@@ -623,8 +623,8 @@ fun ServerDetailScreen(
         )
     }
 
-    if (showRename && profile != null) {
-        var newName by remember(profile.id) { mutableStateOf(profile.name) }
+    if (showRename && server != null) {
+        var newName by remember(server.id) { mutableStateOf(server.name) }
         AlertDialog(
             onDismissRequest = { showRename = false },
             title = { Text(stringResource(R.string.rename_server_title)) },
@@ -641,7 +641,7 @@ fun ServerDetailScreen(
                 TextButton(
                     onClick = {
                         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                        settingsViewModel.renameProfile(profileId, newName)
+                        settingsViewModel.renameServer(serverId, newName)
                         showRename = false
                     },
                     enabled = newName.isNotBlank()
@@ -847,7 +847,7 @@ private fun FailedContent(onRetry: () -> Unit) {
     }
 }
 
-/** Неактивный профиль — hero + «Сделать активным». Адреса не дублируем: они в шапке хаба. */
+/** Неактивный сервер — hero + «Сделать активным». Адреса не дублируем: они в шапке хаба. */
 @Composable
 private fun OfflineContent(onActivate: () -> Unit) {
     StatusHero(
@@ -880,24 +880,24 @@ private fun versionLabel(version: String): String = "v${version.removePrefix("v"
 
 /**
  * «Отладочная информация» — отдельный экран (вход из хаба, гейт по nerdMode): отладочные
- * per-profile флаги (подробные логи, показ логов) + состояние ядра + журнал сервера
+ * per-server флаги (подробные логи, показ логов) + состояние ядра + журнал сервера
  * и SSH-лог. Потоки логов собираем только здесь — хаб на них не подписан.
  */
 @Composable
 fun NerdScreen(
-    profileId: String,
+    serverId: String,
     settingsViewModel: SettingsViewModel,
     serverViewModel: ServerViewModel,
     onBack: () -> Unit
 ) {
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val coreStatus by serverViewModel.hubStatus.collectAsStateWithLifecycle()
-    val profile = snapshot.list.firstOrNull { it.id == profileId }
-    val isActive = snapshot.activeId == profileId
+    val server = snapshot.list.firstOrNull { it.id == serverId }
+    val isActive = snapshot.activeId == serverId
 
-    // Профиль удалён — выходим назад (как в хабе).
-    if (snapshot.loaded && profile == null) {
+    // Сервер удалён — выходим назад (как в хабе).
+    if (snapshot.loaded && server == null) {
         LaunchedEffect(Unit) { onBack() }
         return
     }
@@ -932,9 +932,9 @@ fun NerdScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (profile != null) {
+                if (server != null) {
                     NerdContent(
-                        profile = profile,
+                        server = server,
                         online = online,
                         privacyMode = privacyMode,
                         settingsViewModel = settingsViewModel,
@@ -948,19 +948,19 @@ fun NerdScreen(
 
 @Composable
 private fun NerdContent(
-    profile: Profile,
+    server: Server,
     online: ServerHubStatus.Online?,
     privacyMode: Boolean,
     settingsViewModel: SettingsViewModel,
     serverViewModel: ServerViewModel
 ) {
     val context = LocalContext.current
-    val profileId = profile.id
-    val client = profile.client
+    val serverId = server.id
+    val client = server.client
     val sshLog by serverViewModel.sshLog.collectAsStateWithLifecycle()
     val journalLoading by serverViewModel.journalLoading.collectAsStateWithLifecycle()
 
-    // Per-profile отладочные флаги. updateProfileClient разводит active/inactive и
+    // Per-server отладочные флаги. updateServerClient разводит active/inactive и
     // применяет logsEnabled живьём — отдельные VM-сеттеры не нужны.
     SettingsGroup {
         SettingsGroupItem(0, 2) {
@@ -969,7 +969,7 @@ private fun NerdContent(
                 subtitle = stringResource(R.string.debug_mode_desc),
                 checked = client.debugMode,
                 onCheckedChange = { v ->
-                    settingsViewModel.updateProfileClient(profileId) { it.copy(debugMode = v) }
+                    settingsViewModel.updateServerClient(serverId) { it.copy(debugMode = v) }
                 }
             )
         }
@@ -979,7 +979,7 @@ private fun NerdContent(
                 subtitle = stringResource(R.string.logs_enabled_desc),
                 checked = client.logsEnabled,
                 onCheckedChange = { v ->
-                    settingsViewModel.updateProfileClient(profileId) { it.copy(logsEnabled = v) }
+                    settingsViewModel.updateServerClient(serverId) { it.copy(logsEnabled = v) }
                 }
             )
         }
@@ -989,7 +989,7 @@ private fun NerdContent(
     if (online != null) CoreStateCard(online, privacyMode)
 
     // Параметры запуска реконструируются из конфига — видны всегда, даже оффлайн.
-    LaunchParamsCard(profile, privacyMode)
+    LaunchParamsCard(server, privacyMode)
 
     // Единый SSH-лог: копит весь вывод команд (включая ошибки сопряжения и server.log,
     // который тянется кнопкой ниже). Показываем при живом SSH (нужна кнопка журнала)
@@ -1035,7 +1035,7 @@ private fun CoreStateCard(online: ServerHubStatus.Online, privacyMode: Boolean) 
             online.version?.takeIf { it.isNotBlank() }?.let {
                 NerdStateRow(stringResource(R.string.nerd_version_label), versionLabel(it), mono = true)
             }
-            NerdStateRow(stringResource(R.string.profile_has_ssh), online.sshIp.redact(privacyMode), mono = true)
+            NerdStateRow(stringResource(R.string.server_has_ssh), online.sshIp.redact(privacyMode), mono = true)
         }
     }
 }
@@ -1070,9 +1070,9 @@ private fun NerdStateRow(label: String, value: String, mono: Boolean = false) {
  * Секреты (obf-ключ, vk-ссылка, адрес пира/TURN) маскируются под privacyMode.
  */
 @Composable
-private fun LaunchParamsCard(profile: Profile, privacyMode: Boolean) {
-    val serverCmd = remember(profile, privacyMode) { serverCommandLine(profile, privacyMode) }
-    val clientCmd = remember(profile, privacyMode) { clientCommandLine(profile, privacyMode) }
+private fun LaunchParamsCard(server: Server, privacyMode: Boolean) {
+    val serverCmd = remember(server, privacyMode) { serverCommandLine(server, privacyMode) }
+    val clientCmd = remember(server, privacyMode) { clientCommandLine(server, privacyMode) }
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -1105,8 +1105,8 @@ private fun LaunchParamBlock(label: String, commandLine: String) {
 private val CLIENT_SECRET_FLAGS = setOf("-peer", "-link", "-obf-key", "-turn")
 
 /** Командная строка клиентского ядра (как в движке) с маской секретов. */
-private fun clientCommandLine(profile: Profile, privacy: Boolean): String {
-    val argv = CoreArgs.client(profile.client, profile.server)
+private fun clientCommandLine(server: Server, privacy: Boolean): String {
+    val argv = CoreArgs.client(server.client, server.opts)
     val sb = StringBuilder("freeturn")
     var i = 0
     while (i < argv.size) {
@@ -1123,13 +1123,13 @@ private fun clientCommandLine(profile: Profile, privacy: Boolean): String {
 }
 
 /** Командная строка серверного ядра (как уходит по SSH в free-turn-control.sh). */
-private fun serverCommandLine(profile: Profile, privacy: Boolean): String {
+private fun serverCommandLine(server: Server, privacy: Boolean): String {
     val opts = ServerOptions(
-        listen = profile.proxyListen,
-        connect = profile.proxyConnect,
-        tcpMode = profile.client.tcpForward,
-        obfProfile = if (profile.server.obfEnabled) profile.server.obfProfile else ObfProfile.NONE,
-        obfKey = if (profile.server.obfEnabled) profile.server.obfKey else ""
+        listen = server.proxyListen,
+        connect = server.proxyConnect,
+        tcpMode = server.client.tcpForward,
+        obfProfile = if (server.opts.obfEnabled) server.opts.obfProfile else ObfProfile.NONE,
+        obfKey = if (server.opts.obfEnabled) server.opts.obfKey else ""
     )
     // Серверные флаги в форме --flag=value: маскируем хвост после '=' у секретов.
     val shown = ServerCommand.Start(opts).toArgv().joinToString(" ") { tok ->

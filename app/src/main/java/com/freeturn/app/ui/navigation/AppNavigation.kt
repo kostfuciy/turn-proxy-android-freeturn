@@ -79,11 +79,11 @@ object Routes {
     const val ABOUT = "about"
     const val ADVANCED = "advanced"
     const val SERVERS_LIST = "servers_list"
-    const val SERVER_DETAIL = "server_detail/{profileId}"
-    const val CONNECTION_MODE = "connection_mode/{profileId}"
-    const val CLIENT_SETUP = "client_setup/{profileId}"
-    const val SERVER_MANAGEMENT = "server_management/{profileId}"
-    const val NERD_INFO = "nerd_info/{profileId}"
+    const val SERVER_DETAIL = "server_detail/{serverId}"
+    const val CONNECTION_MODE = "connection_mode/{serverId}"
+    const val CLIENT_SETUP = "client_setup/{serverId}"
+    const val SERVER_MANAGEMENT = "server_management/{serverId}"
+    const val NERD_INFO = "nerd_info/{serverId}"
 
     fun serverDetail(id: String) = "server_detail/$id"
     fun connectionMode(id: String) = "connection_mode/$id"
@@ -292,9 +292,9 @@ private fun AppNavHost(
             }
 
             composable(Routes.SERVER_DETAIL) { entry ->
-                val id = entry.arguments?.getString("profileId").orEmpty()
+                val id = entry.arguments?.getString("serverId").orEmpty()
                 ServerDetailScreen(
-                    profileId = id,
+                    serverId = id,
                     settingsViewModel = settingsViewModel,
                     serverViewModel = serverViewModel,
                     onBack = { navController.popBackStack() },
@@ -307,9 +307,9 @@ private fun AppNavHost(
             }
 
             composable(Routes.NERD_INFO) { entry ->
-                val id = entry.arguments?.getString("profileId").orEmpty()
+                val id = entry.arguments?.getString("serverId").orEmpty()
                 NerdScreen(
-                    profileId = id,
+                    serverId = id,
                     settingsViewModel = settingsViewModel,
                     serverViewModel = serverViewModel,
                     onBack = { navController.popBackStack() }
@@ -317,32 +317,32 @@ private fun AppNavHost(
             }
 
             composable(Routes.CONNECTION_MODE) { entry ->
-                val id = entry.arguments?.getString("profileId").orEmpty()
+                val id = entry.arguments?.getString("serverId").orEmpty()
                 ConnectionModeScreen(
                     settingsViewModel = settingsViewModel,
                     proxyViewModel = proxyViewModel,
-                    profileId = id,
+                    serverId = id,
                     onBack = { navController.popBackStack() }
                 )
             }
 
             composable(Routes.SERVER_MANAGEMENT) { entry ->
-                val id = entry.arguments?.getString("profileId").orEmpty()
+                val id = entry.arguments?.getString("serverId").orEmpty()
                 ServerManagementScreen(
                     serverViewModel = serverViewModel,
                     settingsViewModel = settingsViewModel,
-                    profileId = id,
+                    serverId = id,
                     onBack = { navController.popBackStack() },
                     onEditConnection = { navController.navigate(Routes.SSH_SETUP) }
                 )
             }
 
             composable(Routes.CLIENT_SETUP) { entry ->
-                val id = entry.arguments?.getString("profileId").orEmpty()
+                val id = entry.arguments?.getString("serverId").orEmpty()
                 ClientSetupScreen(
                     settingsViewModel = settingsViewModel,
                     serverViewModel = serverViewModel,
-                    profileId = id,
+                    serverId = id,
                     onBack = { navController.popBackStack() }
                 )
             }

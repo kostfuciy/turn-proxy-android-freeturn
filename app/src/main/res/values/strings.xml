@@ -173,9 +173,9 @@
     <string name="tg_subscribe_btn">Подписаться</string>
     <string name="tg_not_now">Не сейчас</string>
 
-    <!-- Profiles -->
-    <string name="profile_delete">Удалить</string>
-    <string name="profile_unsaved_label">Не сохранено</string>
+    <!-- Servers -->
+    <string name="server_delete">Удалить</string>
+    <string name="server_unsaved_label">Не сохранено</string>
 
     <!-- Notification & Tile -->
     <string name="notif_proxy_stop_action">Отключить</string>
@@ -197,8 +197,8 @@
     <string name="split_tunnel_status_off">Раздельное туннелирование выключено</string>
     <string name="split_tunnel_status_on">Раздельное туннелирование включено</string>
 
-    <!-- Profiles sheet (servers) -->
-    <string name="profiles_servers_title">Серверы</string>
+    <!-- Servers sheet -->
+    <string name="servers_sheet_title">Серверы</string>
 
     <!-- Логи -->
     <string name="logs_enabled">Показывать логи</string>
@@ -254,8 +254,8 @@
     <string name="server_inactive_title">Сервер не активен</string>
     <string name="server_inactive_desc">Чтобы управлять ядром и SSH-подключением, сделайте этот сервер активным.</string>
     <string name="make_active">Сделать активным</string>
-    <string name="profile_active_badge">Активный</string>
-    <string name="profile_has_ssh">SSH</string>
+    <string name="server_active_badge">Активный</string>
+    <string name="server_has_ssh">SSH</string>
     <string name="menu_delete_server">Удалить сервер</string>
     <string name="menu_rename_server">Переименовать</string>
     <string name="rename_server_title">Переименовать сервер</string>

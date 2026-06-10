@@ -6,38 +6,40 @@ import java.util.UUID
 
 
 /**
- * Именованный снимок настроек: SSH-сервер + клиентские параметры.
- * Хранится сериализованным в DataStore. Активный профиль — это id из общего
+ * Именованный сервер: SSH-доступ + клиентские параметры + серверные опции.
+ * Хранится сериализованным в DataStore. Активный сервер — это id из общего
  * списка; его SshConfig/ClientConfig дублируются в legacy-ключах prefs, чтобы
  * существующие экраны и ViewModel могли работать без переписывания.
  */
-data class Profile(
+data class Server(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val ssh: SshConfig = SshConfig(),
     val client: ClientConfig = ClientConfig(),
     val proxyListen: String = "0.0.0.0:56000",
     val proxyConnect: String = "127.0.0.1:40537",
-    val server: AppPreferences.ServerOpts = AppPreferences.ServerOpts()
+    val opts: AppPreferences.ServerOpts = AppPreferences.ServerOpts()
 )
 
-data class ProfilesSnapshot(
-    val list: List<Profile> = emptyList(),
+data class ServersSnapshot(
+    val list: List<Server> = emptyList(),
     val activeId: String? = null,
     /** false = initial-значение stateIn до первой эмиссии DataStore. */
     val loaded: Boolean = false
 ) {
-    val active: Profile? get() = list.firstOrNull { it.id == activeId }
+    val active: Server? get() = list.firstOrNull { it.id == activeId }
 }
 
-internal object ProfileJson {
-    fun encodeList(list: List<Profile>): String {
+// JSON-ключи («server», «obfProfile», …) — legacy-схема хранения, не менять:
+// иначе сохранённые серверы пользователей не распарсятся.
+internal object ServerJson {
+    fun encodeList(list: List<Server>): String {
         val arr = JSONArray()
         list.forEach { arr.put(encode(it)) }
         return arr.toString()
     }
 
-    fun decodeList(raw: String?): List<Profile> {
+    fun decodeList(raw: String?): List<Server> {
         if (raw.isNullOrBlank()) return emptyList()
         return try {
             val arr = JSONArray(raw)
@@ -47,7 +49,7 @@ internal object ProfileJson {
         }
     }
 
-    private fun encode(p: Profile): JSONObject = JSONObject().apply {
+    private fun encode(p: Server): JSONObject = JSONObject().apply {
         put("id", p.id)
         put("name", p.name)
         put("ssh", JSONObject().apply {
@@ -90,16 +92,16 @@ internal object ProfileJson {
         put("proxyListen", p.proxyListen)
         put("proxyConnect", p.proxyConnect)
         put("server", JSONObject().apply {
-            put("obfProfile", p.server.obfProfile)
-            put("obfKey", p.server.obfKey)
+            put("obfProfile", p.opts.obfProfile)
+            put("obfKey", p.opts.obfKey)
         })
     }
 
-    private fun decode(o: JSONObject): Profile {
+    private fun decode(o: JSONObject): Server {
         val sshO = o.optJSONObject("ssh") ?: JSONObject()
         val cliO = o.optJSONObject("client") ?: JSONObject()
         val srvO = o.optJSONObject("server") ?: JSONObject()
-        return Profile(
+        return Server(
             id = o.optString("id").ifBlank { UUID.randomUUID().toString() },
             name = o.optString("name").ifBlank { "Без названия" },
             ssh = SshConfig(
@@ -152,7 +154,7 @@ internal object ProfileJson {
             ),
             proxyListen = o.optString("proxyListen").ifBlank { "0.0.0.0:56000" },
             proxyConnect = o.optString("proxyConnect").ifBlank { "127.0.0.1:40537" },
-            server = AppPreferences.ServerOpts(
+            opts = AppPreferences.ServerOpts(
                 obfProfile = srvO.optString("obfProfile", ObfProfile.NONE).let {
                     if (it in ObfProfile.ALL) it else ObfProfile.NONE
                 },

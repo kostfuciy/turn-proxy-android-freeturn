@@ -175,8 +175,10 @@ class AppPreferences(context: Context) {
         val DYNAMIC_THEME = booleanPreferencesKey("dynamic_theme")
         val NERD_MODE = booleanPreferencesKey("nerd_mode")
         val TG_SUBSCRIBE_SHOWN = booleanPreferencesKey("tg_subscribe_shown")
-        val PROFILES_JSON = stringPreferencesKey("profiles_json")
-        val ACTIVE_PROFILE_ID = stringPreferencesKey("active_profile_id")
+        // Имена ключей legacy («profiles_json», «active_profile_id») — не менять,
+        // иначе сохранённые серверы пользователей потеряются при обновлении.
+        val SERVERS_JSON = stringPreferencesKey("profiles_json")
+        val ACTIVE_SERVER_ID = stringPreferencesKey("active_profile_id")
     }
 
     // Шифрованное хранилище для SSH-пароля и ключа (Android Keystore + AES-256)
@@ -299,17 +301,17 @@ class AppPreferences(context: Context) {
 
     val tgSubscribeShownFlow: Flow<Boolean> = prefFlow { prefs -> prefs[TG_SUBSCRIBE_SHOWN] ?: false }
 
-    /** Заменяет весь список профилей. */
-    suspend fun saveProfiles(list: List<Profile>) {
+    /** Заменяет весь список серверов. */
+    suspend fun saveServers(list: List<Server>) {
         context.dataStore.edit { prefs ->
-            prefs[PROFILES_JSON] = ProfileJson.encodeList(list)
+            prefs[SERVERS_JSON] = ServerJson.encodeList(list)
         }
     }
 
-    suspend fun setActiveProfileId(id: String?) {
+    suspend fun setActiveServerId(id: String?) {
         context.dataStore.edit { prefs ->
-            if (id == null) prefs.remove(ACTIVE_PROFILE_ID)
-            else prefs[ACTIVE_PROFILE_ID] = id
+            if (id == null) prefs.remove(ACTIVE_SERVER_ID)
+            else prefs[ACTIVE_SERVER_ID] = id
         }
     }
 
@@ -393,10 +395,10 @@ class AppPreferences(context: Context) {
      * Снимок: список + id активного. Объединено в один Flow, чтобы UI получал
      * консистентную пару (нет окна, в котором активный id указывает на удалённый).
      */
-    val profilesSnapshot: Flow<ProfilesSnapshot> = prefFlow { prefs ->
-            ProfilesSnapshot(
-                list = ProfileJson.decodeList(prefs[PROFILES_JSON]),
-                activeId = prefs[ACTIVE_PROFILE_ID]?.takeIf { it.isNotBlank() },
+    val serversSnapshot: Flow<ServersSnapshot> = prefFlow { prefs ->
+            ServersSnapshot(
+                list = ServerJson.decodeList(prefs[SERVERS_JSON]),
+                activeId = prefs[ACTIVE_SERVER_ID]?.takeIf { it.isNotBlank() },
                 loaded = true
             )
         }

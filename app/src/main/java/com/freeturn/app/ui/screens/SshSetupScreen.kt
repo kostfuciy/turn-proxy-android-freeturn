@@ -82,9 +82,9 @@ fun SshSetupScreen(
     onConnected: () -> Unit,
     onBack: () -> Unit
 ) {
-    // Экран не профиль-скоупный (правит активный SSH). Все профили удалены, пока экран
+    // Экран не сервер-скоупный (правит активный SSH). Все серверы удалены, пока экран
     // висел в стеке вкладки — выходим назад: иначе форма пишет в осиротевший конфиг.
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     if (snapshot.loaded && snapshot.list.isEmpty()) {
         LaunchedEffect(Unit) { onBack() }
         return

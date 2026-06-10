@@ -143,11 +143,11 @@ fun HomeScreen(
     }
 
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
-    val profilesSnapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val serversSnapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val showSplitSheet = rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    // Standard bottom sheet: свёрнутый peek = карточка активного профиля,
+    // Standard bottom sheet: свёрнутый peek = карточка активного сервера,
     // тянется вверх до полного списка серверов. skipHiddenState — sheet всегда
     // виден, не прячется полностью.
     val sheetScaffoldState = rememberBottomSheetScaffoldState(
@@ -185,7 +185,7 @@ fun HomeScreen(
         sheetContent = {
             ServersSheetContent(
                 settingsViewModel = settingsViewModel,
-                snapshot = profilesSnapshot,
+                snapshot = serversSnapshot,
                 privacyMode = privacyMode,
                 onCollapse = {
                     scope.launch { sheetScaffoldState.bottomSheetState.partialExpand() }
@@ -497,8 +497,8 @@ private fun ProxyToggleButton(state: ProxyState, onClick: () -> Unit) {
 }
 
 /**
- * Прилипшая к низу M3 «карточка» — единственная точка входа в управление профилями.
- * Виден всегда: с сохранённым активным профилем показывает его имя, без — лейбл
+ * Прилипшая к низу M3 «карточка» — единственная точка входа в управление серверами.
+ * Виден всегда: с сохранённым активным сервером показывает его имя, без — лейбл
  * «несохранённая конфигурация» с приглашением открыть sheet.
  */
 internal fun String.redact(enabled: Boolean) = if (enabled) "••••••" else this

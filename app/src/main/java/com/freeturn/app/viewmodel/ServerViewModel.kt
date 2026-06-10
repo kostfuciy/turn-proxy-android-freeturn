@@ -43,8 +43,8 @@ class ServerViewModel(
     val isRegeneratingObfKey: StateFlow<Boolean> = _isRegeneratingObfKey.asStateFlow()
 
     /**
-     * Сводный статус АКТИВНОГО сервера для хаба — одна модель из 2 потоков. Profile-контекст
-     * (активность профиля, наличие SSH) добавляет экран. Промежуточные фазы коллапсятся в
+     * Сводный статус АКТИВНОГО сервера для хаба — одна модель из 2 потоков. Server-контекст
+     * (активность сервера, наличие SSH) добавляет экран. Промежуточные фазы коллапсятся в
      * [ServerHubStatus.Connecting]: от cold start до готовности — один переход в [ServerHubStatus.Online].
      */
     val hubStatus: StateFlow<ServerHubStatus> =

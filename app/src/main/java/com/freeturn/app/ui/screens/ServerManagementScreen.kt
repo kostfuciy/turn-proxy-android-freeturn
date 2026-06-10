@@ -87,32 +87,32 @@ fun ServerManagementScreen(
     settingsViewModel: SettingsViewModel,
     // Кнопка смены сервера (overflow ⋮).
     onEditConnection: (() -> Unit)? = null,
-    // null = legacy. Не-null = настройки сервера конкретного профиля (Settings).
-    profileId: String? = null,
+    // null = legacy. Не-null = настройки конкретного сервера по id (Settings).
+    serverId: String? = null,
     onBack: () -> Unit
 ) {
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
-    val profile = profileId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
+    val server = serverId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
     // Живая SSH-сессия и состояние сервера принадлежат активному серверу. Управлять
-    // ядром можно только когда редактируемый профиль активен (legacy-режим без id
+    // ядром можно только когда редактируемый сервер активен (legacy-режим без id
     // считается активным).
-    val isActive = profileId == null || profileId == snapshot.activeId
+    val isActive = serverId == null || serverId == snapshot.activeId
     val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()
     val serverState by serverViewModel.serverState.collectAsStateWithLifecycle()
     val sshConfig by serverViewModel.sshConfig.collectAsStateWithLifecycle()
     val legacyListen by settingsViewModel.proxyListen.collectAsStateWithLifecycle()
     val legacyConnect by settingsViewModel.proxyConnect.collectAsStateWithLifecycle()
-    val savedListen = profile?.proxyListen ?: legacyListen
-    val savedConnect = profile?.proxyConnect ?: legacyConnect
+    val savedListen = server?.proxyListen ?: legacyListen
+    val savedConnect = server?.proxyConnect ?: legacyConnect
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val clientCfg by settingsViewModel.clientConfig.collectAsStateWithLifecycle()
     val serverOpts by serverViewModel.serverOpts.collectAsStateWithLifecycle()
     val isRegen by serverViewModel.isRegeneratingObfKey.collectAsStateWithLifecycle()
 
-    // Источник серверных черновиков: активный профиль рулит ЖИВЫМ конфигом (legacy/global —
-    // его обновляет regen на сервере), неактивный — снимком профиля by-id (sync OFF, клиент-локально).
-    val effClient = if (isActive) clientCfg else (profile?.client ?: clientCfg)
-    val effServer = if (isActive) serverOpts else (profile?.server ?: serverOpts)
+    // Источник серверных черновиков: активный сервер рулит ЖИВЫМ конфигом (legacy/global —
+    // его обновляет regen на сервере), неактивный — снимком сервера by-id (sync OFF, клиент-локально).
+    val effClient = if (isActive) clientCfg else (server?.client ?: clientCfg)
+    val effServer = if (isActive) serverOpts else (server?.opts ?: serverOpts)
 
     // --- Черновики конфигурации (без авто-сохранения) ---
     var proxyListenIp by rememberSaveable(savedListen) {
@@ -130,8 +130,8 @@ fun ServerManagementScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showServerMenu by rememberSaveable { mutableStateOf(false) }
-    // «Подключено» = ЖИВОЙ SSH ЭТОГО профиля. Живая сессия принадлежит активному серверу,
-    // поэтому для неактивного профиля всегда false (иначе чужой коннект протёк бы сюда).
+    // «Подключено» = ЖИВОЙ SSH ЭТОГО сервера. Живая сессия принадлежит активному серверу,
+    // поэтому для неактивного всегда false (иначе чужой коннект протёк бы сюда).
     val isConnected = isActive && sshState is SshConnectionState.Connected
     val syncOn = effClient.syncServerSwitches
     val isWorking = serverState is ServerState.Working || serverState is ServerState.Checking
@@ -158,12 +158,12 @@ fun ServerManagementScreen(
         configDirty && keyOkForApply && !isWorking
     fun applyConfig() {
         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-        // Активный — apply в живой рантайм (один рестарт). Неактивный — пишем только снимок профиля.
+        // Активный — apply в живой рантайм (один рестарт). Неактивный — пишем только снимок сервера.
         if (isActive) {
             settingsViewModel.applyServerConfig(listenFull, proxyConnect, tcpDraft, obfDraft, keyDraft)
         } else {
-            profileId?.let {
-                settingsViewModel.applyProfileServerConfig(it, listenFull, proxyConnect, tcpDraft, obfDraft, keyDraft)
+            serverId?.let {
+                settingsViewModel.updateServerConfig(it, listenFull, proxyConnect, tcpDraft, obfDraft, keyDraft)
             }
         }
         onBack()
@@ -246,9 +246,9 @@ fun ServerManagementScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Неактивный профиль + sync ON: серверные правки нужно пушить на сервер, а
+                // Неактивный сервер + sync ON: серверные правки нужно пушить на сервер, а
                 // живая SSH-сессия принадлежит активному. Предлагаем сделать активным.
-                // При sync OFF настройки клиент-локальны — редактируем снимок профиля ниже.
+                // При sync OFF настройки клиент-локальны — редактируем снимок сервера ниже.
                 if (!isActive && syncOn) {
                     HeroCard(
                         iconRes = R.drawable.host_24px,
@@ -257,7 +257,7 @@ fun ServerManagementScreen(
                         actionLabel = stringResource(R.string.make_active),
                         onAction = {
                             HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                            profileId?.let { settingsViewModel.applyProfile(it) }
+                            serverId?.let { settingsViewModel.applyServer(it) }
                         }
                     )
                     Spacer(Modifier.height(24.dp))
@@ -478,7 +478,7 @@ fun ServerManagementScreen(
 }
 
 /**
- * Hero-карточка состояния (неактивный профиль / потеря связи): тональный контейнер,
+ * Hero-карточка состояния (неактивный сервер / потеря связи): тональный контейнер,
  * центрированная иконка + заголовок + пояснение + основная кнопка. Один источник стиля
  * для пустых/аварийных состояний экрана.
  */

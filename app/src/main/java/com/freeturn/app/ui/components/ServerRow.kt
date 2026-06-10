@@ -68,7 +68,7 @@ fun ServerRow(
     val iconTint = if (isActive) MaterialTheme.colorScheme.onPrimary
     else MaterialTheme.colorScheme.onSurfaceVariant
 
-    val activeBadge = stringResource(R.string.profile_active_badge)
+    val activeBadge = stringResource(R.string.server_active_badge)
     val rowDesc = if (isActive) "$name, $activeBadge" else name
 
     Surface(shape = shape, color = container, modifier = Modifier.fillMaxWidth()) {

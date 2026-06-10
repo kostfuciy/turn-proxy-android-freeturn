@@ -42,7 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.freeturn.app.R
-import com.freeturn.app.data.ProfilesSnapshot
+import com.freeturn.app.data.ServersSnapshot
 import com.freeturn.app.data.Provider
 import com.freeturn.app.ui.components.EmptyServersState
 import com.freeturn.app.ui.components.ServerRow
@@ -58,7 +58,7 @@ import com.freeturn.app.viewmodel.SettingsViewModel
 @Composable
 fun ServersSheetContent(
     settingsViewModel: SettingsViewModel,
-    snapshot: ProfilesSnapshot,
+    snapshot: ServersSnapshot,
     privacyMode: Boolean = false,
     onCollapse: () -> Unit = {},
     onOpenServerSettings: (String) -> Unit = {}
@@ -78,19 +78,19 @@ fun ServersSheetContent(
                 .padding(horizontal = 24.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val profileName = when {
+            val serverName = when {
                 active != null -> active.name
-                snapshot.loaded -> stringResource(R.string.profile_unsaved_label)
+                snapshot.loaded -> stringResource(R.string.server_unsaved_label)
                 else -> ""
             }
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text(profileName) } },
+                tooltip = { PlainTooltip { Text(serverName) } },
                 state = rememberTooltipState(),
                 enableUserInput = active != null
             ) {
                 Text(
-                    profileName,
+                    serverName,
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
@@ -104,7 +104,7 @@ fun ServersSheetContent(
                     ?: it.ssh.ip.takeIf { a -> a.isNotBlank() })?.redact(privacyMode)
             }
             // Подзаголовок рендерим всегда: пустой Text держит высоту строки, иначе без
-            // профиля контент подъезжает и бейдж провайдера выглядывает из peek-зоны.
+            // сервера контент подъезжает и бейдж провайдера выглядывает из peek-зоны.
             Spacer(Modifier.height(4.dp))
             Text(
                 sub.orEmpty(),
@@ -137,7 +137,7 @@ fun ServersSheetContent(
             )
         } else {
             Text(
-                stringResource(R.string.profiles_servers_title),
+                stringResource(R.string.servers_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(start = 24.dp, end = 16.dp, bottom = 8.dp)
             )
@@ -163,7 +163,7 @@ fun ServersSheetContent(
                         inactiveContainer = MaterialTheme.colorScheme.surfaceContainerHigh,
                         onClick = {
                             if (!isActive) {
-                                settingsViewModel.applyProfile(p.id)
+                                settingsViewModel.applyServer(p.id)
                                 onCollapse()
                             }
                         },

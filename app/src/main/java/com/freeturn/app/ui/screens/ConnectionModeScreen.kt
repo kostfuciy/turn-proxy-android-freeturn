@@ -76,21 +76,21 @@ import kotlinx.coroutines.withContext
 fun ConnectionModeScreen(
     settingsViewModel: SettingsViewModel,
     proxyViewModel: ProxyViewModel,
-    profileId: String? = null,
+    serverId: String? = null,
     onBack: (() -> Unit)? = null
 ) {
-    val snapshot by settingsViewModel.profilesSnapshot.collectAsStateWithLifecycle()
+    val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val legacyClient by settingsViewModel.clientConfig.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val proxyState by proxyViewModel.proxyState.collectAsStateWithLifecycle()
 
-    val profile = profileId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
-    val saved = profile?.client ?: legacyClient
-    val isActive = profileId == null || profileId == snapshot.activeId
+    val server = serverId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
+    val saved = server?.client ?: legacyClient
+    val isActive = serverId == null || serverId == snapshot.activeId
 
     fun clientEdit(transform: (ClientConfig) -> ClientConfig) {
-        if (profileId != null) {
-            settingsViewModel.updateProfileClient(profileId, transform)
+        if (serverId != null) {
+            settingsViewModel.updateServerClient(serverId, transform)
         } else {
             settingsViewModel.saveClientConfig(transform(settingsViewModel.clientConfig.value), snapshot.activeId)
         }
@@ -102,7 +102,7 @@ fun ConnectionModeScreen(
     // userPickedVpn держит VPN-выбор на сессию экрана: пока конфиг пуст, транспорт при
     // чтении нормализуется в NONE (WIREGUARD без конфига = выключен, см. AppPreferences),
     // и без локального флага сегмент мигал бы обратно на Proxy. Сброс по saved.tunnelTransport.
-    var userPickedVpn by remember(profileId, saved.tunnelTransport) { mutableStateOf<Boolean?>(null) }
+    var userPickedVpn by remember(serverId, saved.tunnelTransport) { mutableStateOf<Boolean?>(null) }
     val isVpn = userPickedVpn ?: (saved.tunnelTransport == TunnelTransport.WIREGUARD)
 
     var wgConfig by remember(saved.wireGuardConfig) { mutableStateOf(saved.wireGuardConfig) }
@@ -127,8 +127,8 @@ fun ConnectionModeScreen(
 
     // Дебаунс WG-полей 600 мс. Первый прогон (значения = saved) пропускаем, чтобы не писать
     // на входе. pendingSave → flush при выходе: dispose отменяет корутину и теряет правку.
-    var wgDirty by remember(profileId) { mutableStateOf(false) }
-    var pendingSave by remember(profileId) { mutableStateOf(false) }
+    var wgDirty by remember(serverId) { mutableStateOf(false) }
+    var pendingSave by remember(serverId) { mutableStateOf(false) }
     LaunchedEffect(wgConfig, wgName) {
         if (!wgDirty) { wgDirty = true; return@LaunchedEffect }
         pendingSave = true
