@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.inject
 
 sealed class StartupResult {
     data object Success : StartupResult()
@@ -100,7 +101,7 @@ class ProxyService : Service() {
     private val restartCount = AtomicInteger(0)
     @Volatile private var captchaNotificationActive = false
 
-    private lateinit var prefs: AppPreferences
+    private val prefs: AppPreferences by inject()
     private lateinit var serviceScope: CoroutineScope
     private lateinit var wireGuard: WireGuardTunnelManager
 
@@ -108,7 +109,6 @@ class ProxyService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        prefs = AppPreferences(applicationContext)
         serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         wireGuard = WireGuardTunnelManager(applicationContext)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
