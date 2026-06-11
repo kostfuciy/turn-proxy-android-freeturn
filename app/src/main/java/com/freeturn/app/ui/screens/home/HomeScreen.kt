@@ -25,7 +25,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -113,8 +112,10 @@ fun HomeScreen(
 
     val sheetColor = MaterialTheme.colorScheme.surfaceContainerLow
     val topBar: @Composable () -> Unit = {
+        // Без заголовка: бар нужен только как место для иконки логов в углу
+        // и корректные инсеты статус-бара.
         TopAppBar(
-            title = { Text(stringResource(R.string.turn_proxy_title)) },
+            title = {},
             actions = {
                 // Вход в экран логов — при «Показывать логи» И включённом nerdMode.
                 // Обе галки обязаны быть видимыми одновременно: иначе выключение
