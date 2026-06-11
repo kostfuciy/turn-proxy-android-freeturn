@@ -20,10 +20,16 @@ data class SshConfig(
     val port: Int = 22,
     val username: String = "root",
     val password: String = "",
-    val authType: String = "PASSWORD",
+    val authType: String = AUTH_PASSWORD,
     val sshKey: String = "",
     val hostFingerprint: String = ""
-)
+) {
+    companion object {
+        // Значения authType — контракт хранения (ServerJson).
+        const val AUTH_PASSWORD = "PASSWORD"
+        const val AUTH_SSH_KEY = "SSH_KEY"
+    }
+}
 
 object DnsMode {
     const val AUTO = "auto"
@@ -82,13 +88,13 @@ data class ClientConfig(
     val vkLink: String = "",
     /** Источник TURN-creds (-provider). Пока только "vk". */
     val provider: String = Provider.VK,
-    val threads: Int = 4,
-    /** Соответствует флагу `-streams-per-cred` ядра. Дефолт ядра = 10. */
-    val streamsPerCred: Int = 10,
-    /** TURN-транспорт UDP (-transport udp). false = TCP/TLS (дефолт ядра). */
-    val useUdp: Boolean = true,
+    val threads: Int = 12,
+    /** Соответствует флагу `-streams-per-cred` ядра. Дефолт ядра = 10, наш = 6. */
+    val streamsPerCred: Int = 6,
+    /** TURN-транспорт UDP (-transport udp). false = TCP/TLS (дефолт ядра и наш). */
+    val useUdp: Boolean = false,
     val manualCaptcha: Boolean = false,
-    val localPort: String = "127.0.0.1:9000",
+    val localPort: String = DEFAULT_LOCAL_PORT,
     val isRawMode: Boolean = false,
     val rawCommand: String = "",
     /** Режим туннеля TCP-форвард (-mode tcp, Xray/sing-box). false = UDP-релей (WireGuard). */
@@ -99,7 +105,7 @@ data class ClientConfig(
     // Если true — добавляется флаг -debug для расширенного вывода в логах.
     val debugMode: Boolean = false,
     // Если true — в argv передаётся -dns-servers с DNS активной сети (оператор связи).
-    val useCarrierDns: Boolean = false,
+    val useCarrierDns: Boolean = true,
     // "auto" | "plain" | "doh" — соответствует флагу -dns-mode ядра.
     val dnsMode: String = DnsMode.AUTO,
     /**
@@ -132,6 +138,10 @@ data class ClientConfig(
     /** WG реально активен только если выбран WG-транспорт и задан непустой конфиг. */
     val wireGuardActive: Boolean
         get() = tunnelTransport == TunnelTransport.WIREGUARD && wireGuardConfig.isNotBlank()
+
+    companion object {
+        const val DEFAULT_LOCAL_PORT = "127.0.0.1:9000"
+    }
 }
 
 class AppPreferences(context: Context) {

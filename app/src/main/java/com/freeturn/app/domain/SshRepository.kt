@@ -84,7 +84,7 @@ class SshRepository(
         val result = sshManager.executeSilentCommand(
             cfg.ip, cfg.port, cfg.username, cfg.password, "echo OK",
             knownFingerprint = cfg.hostFingerprint.ifEmpty { null },
-            sshKey = if (cfg.authType == "SSH_KEY") cfg.sshKey else ""
+            sshKey = if (cfg.authType == SshConfig.AUTH_SSH_KEY) cfg.sshKey else ""
         )
         appendSshLog(result.lines().filter { it.isNotBlank() })
         return result

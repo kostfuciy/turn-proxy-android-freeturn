@@ -19,7 +19,12 @@ data class Server(
     val proxyListen: String = "0.0.0.0:56000",
     val proxyConnect: String = "127.0.0.1:40537",
     val opts: ServerOpts = ServerOpts()
-)
+) {
+    companion object {
+        /** Имя-заглушка для записей без имени (data-слой, ресурсы недоступны). */
+        const val FALLBACK_NAME = "Без названия"
+    }
+}
 
 data class ServersSnapshot(
     val list: List<Server> = emptyList(),
@@ -102,13 +107,13 @@ internal object ServerJson {
         val optsO = o.optJSONObject("opts") ?: JSONObject()
         return Server(
             id = o.optString("id").ifBlank { UUID.randomUUID().toString() },
-            name = o.optString("name").ifBlank { "Без названия" },
+            name = o.optString("name").ifBlank { Server.FALLBACK_NAME },
             ssh = SshConfig(
                 ip = sshO.optString("ip"),
                 port = sshO.optInt("port", 22),
                 username = sshO.optString("username", "root"),
                 password = sshO.optString("password"),
-                authType = sshO.optString("authType", "PASSWORD"),
+                authType = sshO.optString("authType", SshConfig.AUTH_PASSWORD),
                 sshKey = sshO.optString("sshKey"),
                 hostFingerprint = sshO.optString("hostFingerprint")
             ),
@@ -118,18 +123,20 @@ internal object ServerJson {
                 provider = cliO.optString("provider", Provider.VK).let {
                     if (it in Provider.ALL) it else Provider.VK
                 },
-                threads = cliO.optInt("threads", 4),
-                streamsPerCred = cliO.optInt("streamsPerCred", 10),
-                useUdp = cliO.optBoolean("useUdp", true),
+                // Фоллбэки = дефолты ClientConfig (encode пишет все ключи — сюда
+                // попадают только записи без ключа, т.е. вновь добавленные поля).
+                threads = cliO.optInt("threads", 12),
+                streamsPerCred = cliO.optInt("streamsPerCred", 6),
+                useUdp = cliO.optBoolean("useUdp", false),
                 manualCaptcha = cliO.optBoolean("manualCaptcha", false),
-                localPort = cliO.optString("localPort", "127.0.0.1:9000"),
+                localPort = cliO.optString("localPort", ClientConfig.DEFAULT_LOCAL_PORT),
                 isRawMode = cliO.optBoolean("isRawMode", false),
                 rawCommand = cliO.optString("rawCommand"),
                 tcpForward = cliO.optBoolean("tcpForward", false),
                 bond = cliO.optBoolean("bond", false),
 
                 debugMode = cliO.optBoolean("debugMode", false),
-                useCarrierDns = cliO.optBoolean("useCarrierDns", false),
+                useCarrierDns = cliO.optBoolean("useCarrierDns", true),
                 dnsMode = cliO.optString("dnsMode", DnsMode.AUTO).let {
                     if (it in DnsMode.ALL) it else DnsMode.AUTO
                 },

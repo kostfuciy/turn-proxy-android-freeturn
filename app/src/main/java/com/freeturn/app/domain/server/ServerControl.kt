@@ -37,7 +37,7 @@ class ServerControl(
             command = remoteCmd(cmd.toArgv()),
             stdin = script,
             knownFingerprint = cfg.hostFingerprint.ifEmpty { null },
-            sshKey = if (cfg.authType == "SSH_KEY") cfg.sshKey else ""
+            sshKey = if (cfg.authType == SshConfig.AUTH_SSH_KEY) cfg.sshKey else ""
         )
         return ServerOutputParser.parse(output)
     }
