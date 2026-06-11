@@ -34,6 +34,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.freeturn.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -104,6 +106,14 @@ object Routes {
     fun serverManagement(id: String) = "server_management/$id"
     fun nerdInfo(id: String) = "nerd_info/$id"
 }
+
+// Контент экрана кликабелен уже во время навигационного перехода, а RESUMED его
+// entry становится только по окончании анимации. Поздний второй тап успевал
+// провалиться в элемент нового экрана (FAB «На главную» визарда и шестерёнка
+// активного сервера в пике листа — одно место внизу справа: тап уводил в хаб
+// сразу после возврата на главную) — до RESUMED навигационные тапы глотаем.
+private fun NavBackStackEntry.isResumed() =
+    lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
 
 private fun NavHostController.navigateToTab(graphRoute: String) {
     navigate(graphRoute) {
@@ -268,24 +278,26 @@ private fun AppNavHost(
         // Вкладка «Главная». Вход в экран логов живёт в шапке Home (кнопка видна при
         // включённом «Показывать логи») и открывается в стеке этой же вкладки.
         navigation(startDestination = Routes.HOME, route = Routes.HOME_GRAPH) {
-            composable(Routes.HOME) {
+            composable(Routes.HOME) { entry ->
                 HomeScreen(
                     settingsViewModel = settingsViewModel,
                     proxyViewModel = proxyViewModel,
-                    onOpenLogs = { navController.navigate(Routes.LOGS) },
+                    onOpenLogs = { if (entry.isResumed()) navController.navigate(Routes.LOGS) },
                     // Хаб живёт в графе настроек. Прямой navigate отсюда пушил бы
                     // settings-экраны в стек вкладки «Главная» — save/restore вкладок
                     // портится (хаб «залипает», переходы по бару ломаются). Поэтому
                     // сперва честно переключаем вкладку, затем пушим хаб в её стек.
                     onOpenServerSettings = { id ->
-                        navController.navigateToTab(Routes.SETTINGS_GRAPH)
-                        // singleTop: восстановленный стек настроек мог уже держать
-                        // этот хаб сверху — без него destination задваивается.
-                        navController.navigate(Routes.serverDetail(id)) { launchSingleTop = true }
+                        if (entry.isResumed()) {
+                            navController.navigateToTab(Routes.SETTINGS_GRAPH)
+                            // singleTop: восстановленный стек настроек мог уже держать
+                            // этот хаб сверху — без него destination задваивается.
+                            navController.navigate(Routes.serverDetail(id)) { launchSingleTop = true }
+                        }
                     },
                     // CTA пустого состояния — вкладка добавления сервера (tab-переход,
                     // не push: иначе бар перестаёт возвращать на главную).
-                    onAddServer = { navController.navigateToTab(Routes.ADD_GRAPH) }
+                    onAddServer = { if (entry.isResumed()) navController.navigateToTab(Routes.ADD_GRAPH) }
                 )
             }
             composable(Routes.LOGS) {
@@ -304,9 +316,9 @@ private fun AppNavHost(
         // push (хаб из вкладки «+») ломал restoreState при переключении вкладок —
         // сервер создаётся мастером, в конце переходим на главную.
         navigation(startDestination = Routes.ADD_SERVER, route = Routes.ADD_GRAPH) {
-            composable(Routes.ADD_SERVER) {
+            composable(Routes.ADD_SERVER) { entry ->
                 AddServerScreen(
-                    onSelfHosted = { navController.navigate(Routes.SELF_HOSTED_SETUP) },
+                    onSelfHosted = { if (entry.isResumed()) navController.navigate(Routes.SELF_HOSTED_SETUP) },
                     // Ручная настройка: создаём пустой сервер и уводим в его хаб.
                     // Хаб живёт в графе настроек — тот же tab-switch + singleTop-push,
                     // что у HomeScreen.onOpenServerSettings (кросс-графовый push ломает
@@ -323,10 +335,13 @@ private fun AppNavHost(
                 ServerSetupScreen(
                     onClose = { navController.popBackStack() },
                     onFinished = {
-                        // Чистим стек вкладки «+» до корня и уходим на главную —
-                        // новый сервер уже активен, хиро готов к запуску.
-                        navController.popBackStack(Routes.ADD_SERVER, inclusive = false)
-                        navController.navigateToTab(Routes.HOME_GRAPH)
+                        // Один переход сразу на главную (двухшаговый pop+navigate
+                        // мигал экраном добавления). Стек «+» сносим без сохранения —
+                        // иначе вкладка восстановила бы устаревший done-экран мастера.
+                        navController.navigate(Routes.HOME_GRAPH) {
+                            popUpTo(navController.graph.findStartDestination().id)
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
