@@ -23,6 +23,13 @@ UNIT_PATH="/etc/systemd/system/free-turn-proxy.service"
 UNIT_NAME="free-turn-proxy.service"
 BASE_URL="https://github.com/samosvalishe/free-turn-proxy/releases/latest/download"
 
+# WireGuard bootstrap (wg-setup): сеть /24, .1 — сервер, .2 — первый пир.
+WG_DIR="/etc/wireguard"
+WG_IFACE="wg0"
+WG_CONF="$WG_DIR/$WG_IFACE.conf"
+WG_NET="10.13.13"
+WG_CLIENT_CONF="$PREFIX/wireguard-client.conf"
+
 log()  { echo "LOG: $*"; }
 emit() { echo "$1=$2"; }
 die()  { echo "ERR=$*"; echo "RESULT=err"; trap - EXIT; exit 1; }
@@ -154,6 +161,24 @@ cmd_probe() {
         emit OBF "${obf:-none}"
     else
         emit RUNNING no
+    fi
+
+    # WireGuard для мастера установки: WG_PORT — порт активного интерфейса либо
+    # ListenPort из conf (интерфейс не поднят). Нет WG_PORT = бэкенда-WG нет.
+    if command -v wg >/dev/null 2>&1; then
+        emit WG_INSTALLED yes
+        local wgp=""
+        wgp=$(wg show all listen-port 2>/dev/null | awk 'NF{print $NF; exit}' || true)
+        if [ -z "$wgp" ] && ls "$WG_DIR"/*.conf >/dev/null 2>&1; then
+            wgp=$(grep -ih '^[[:space:]]*ListenPort' "$WG_DIR"/*.conf 2>/dev/null \
+                | head -n1 | sed 's/.*=[[:space:]]*//; s/[#;].*//' | tr -d ' \r' || true)
+        fi
+        case "$wgp" in
+            ''|*[!0-9]*) ;;
+            *) emit WG_PORT "$wgp" ;;
+        esac
+    else
+        emit WG_INSTALLED no
     fi
     echo "RESULT=ok"
     trap - EXIT
@@ -362,6 +387,9 @@ ARG_MODE=""
 ARG_OBF_PROFILE="none"
 ARG_OBF_KEY=""
 ARG_TAIL=80
+ARG_WG_PORT=""
+ARG_WG_ENDPOINT=""
+ARG_WG_ADOPT=""
 
 parse_args() {
     while [ $# -gt 0 ]; do
@@ -389,6 +417,18 @@ parse_args() {
             --tail=*)
                 ARG_TAIL="${1#*=}"
                 [[ "$ARG_TAIL" =~ ^[0-9]+$ ]] || die "bad --tail"
+                ;;
+            --port=*)
+                ARG_WG_PORT="${1#*=}"
+                [[ "$ARG_WG_PORT" =~ ^[0-9]+$ ]] || die "bad --port"
+                ;;
+            --endpoint=*)
+                ARG_WG_ENDPOINT="${1#*=}"
+                [[ "$ARG_WG_ENDPOINT" =~ ^[a-zA-Z0-9._-]+:[0-9]{1,5}$ ]] || die "bad --endpoint (host:port)"
+                ;;
+            --adopt=*)
+                ARG_WG_ADOPT="${1#*=}"
+                [[ "$ARG_WG_ADOPT" =~ ^[01]$ ]] || die "bad --adopt (need 0|1)"
                 ;;
             *) die "unknown arg: $1" ;;
         esac
@@ -509,6 +549,231 @@ cmd_start_nohup() {
     trap - EXIT
 }
 
+# ── WireGuard bootstrap (мастер установки) ──────────────────────────────────
+# Идемпотентно поднимает WG-сервер как бэкенд free-turn-proxy: ставит
+# wireguard-tools, генерит ключи, пишет wg0.conf (ListenPort=--port) и клиентский
+# конфиг (Endpoint=--endpoint), включает wg-quick@wg0. Существующий wg0.conf не
+# перетирается (ключи стабильны). Порт WG в firewall не открывается — трафик
+# приходит только через free-turn-proxy.
+
+_wg_pkg_install() {
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -qq >/dev/null 2>&1 || true
+        apt-get install -y -qq wireguard-tools >/dev/null 2>&1 \
+            || apt-get install -y -qq wireguard >/dev/null 2>&1 || true
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y -q wireguard-tools >/dev/null 2>&1 || true
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y -q wireguard-tools >/dev/null 2>&1 || true
+    fi
+}
+
+_wg_existing_port() {  # CONF_PATH
+    # s/[#;].*// — срезает инлайн-комментарий после значения.
+    grep -i '^[[:space:]]*ListenPort' "$1" 2>/dev/null \
+        | head -n1 | sed 's/.*=[[:space:]]*//; s/[#;].*//' | tr -d ' \r' || true
+}
+
+# Добавляет отдельного пира в СУЩЕСТВУЮЩИЙ conf и пишет клиентский конфиг.
+# _wg_add_peer CONF_PATH IFACE; код 1 — нестандартный conf (нет PrivateKey/Address),
+# вызывающий продолжает без клиентского конфига.
+_wg_add_peer() {
+    local conf="$1" iface="$2"
+    local srv_priv srv_pub addr base used i candidate cli_priv cli_pub
+    srv_priv=$(sed -n 's/^[[:space:]]*PrivateKey[[:space:]]*=[[:space:]]*//p' "$conf" | head -n1 | tr -d ' \r')
+    [ -n "$srv_priv" ] || return 1
+    srv_pub=$(printf '%s' "$srv_priv" | wg pubkey) || return 1
+
+    # Подсеть из Interface Address (10.13.13.1/24 → база 10.13.13).
+    addr=$(sed -n 's/^[[:space:]]*Address[[:space:]]*=[[:space:]]*//p' "$conf" | head -n1 | cut -d, -f1 | cut -d/ -f1 | tr -d ' \r')
+    base=${addr%.*}
+    [ -n "$base" ] && [ "$base" != "$addr" ] || return 1
+
+    # Свободный хост: заняты адрес сервера и AllowedIPs существующих пиров.
+    used=$(printf '%s\n' "$addr"; sed -n 's/^[[:space:]]*AllowedIPs[[:space:]]*=[[:space:]]*//p' "$conf" | tr ',' '\n' | cut -d/ -f1 | tr -d ' ')
+    candidate=""
+    for i in $(seq 2 254); do
+        if ! printf '%s\n' "$used" | grep -qx "$base.$i"; then candidate="$base.$i"; break; fi
+    done
+    [ -n "$candidate" ] || return 1
+
+    cli_priv=$(wg genkey) || return 1
+    cli_pub=$(printf '%s' "$cli_priv" | wg pubkey) || return 1
+
+    cat >> "$conf" <<EOF
+
+[Peer]
+# free-turn-proxy client (конфиг: $WG_CLIENT_CONF)
+PublicKey = $cli_pub
+AllowedIPs = $candidate/32
+EOF
+
+    # Применяем на живом интерфейсе без рестарта — рестарт рвал бы чужие сессии.
+    if wg show "$iface" >/dev/null 2>&1; then
+        wg set "$iface" peer "$cli_pub" allowed-ips "$candidate/32" 2>/dev/null || true
+    fi
+
+    ( umask 077
+      cat > "$WG_CLIENT_CONF" <<EOF
+[Interface]
+PrivateKey = $cli_priv
+Address = $candidate/32
+DNS = 1.1.1.1
+
+[Peer]
+PublicKey = $srv_pub
+AllowedIPs = 0.0.0.0/0
+Endpoint = $ARG_WG_ENDPOINT
+PersistentKeepalive = 25
+EOF
+    )
+    return 0
+}
+
+_emit_wg_client_conf() {
+    [ -f "$WG_CLIENT_CONF" ] || return 0
+    if ! command -v base64 >/dev/null 2>&1; then
+        log "(base64 unavailable - import client conf manually: $WG_CLIENT_CONF)"
+        return 0
+    fi
+    emit WG_CLIENT_CONF_B64 "$(base64 < "$WG_CLIENT_CONF" | tr -d '\n')"
+}
+
+cmd_wg_setup() {
+    parse_args "$@"
+    [ -n "$ARG_WG_PORT" ] || die "--port required"
+    [ -n "$ARG_WG_ENDPOINT" ] || die "--endpoint required"
+
+    # Существующий WireGuard: берём первый conf в /etc/wireguard (не обязательно wg0),
+    # не перетираем — добавляем своего пира и отдаём фактический порт.
+    local conf iface exist_port
+    conf=$(ls "$WG_DIR"/*.conf 2>/dev/null | head -n1 || true)
+    if [ -n "$conf" ]; then
+        iface=$(basename "$conf" .conf)
+        exist_port=$(_wg_existing_port "$conf")
+        systemctl enable --now "wg-quick@$iface" >/dev/null 2>&1 \
+            || wg-quick up "$iface" >/dev/null 2>&1 \
+            || log "warning: cannot bring up $iface - check WireGuard on server"
+        # Своего клиентского конфига ещё нет — добавляем отдельного пира для
+        # этого устройства (повторный запуск переиспользует готовый конфиг).
+        if [ ! -f "$WG_CLIENT_CONF" ]; then
+            _wg_add_peer "$conf" "$iface" \
+                || log "cannot add peer to $conf - import client conf manually"
+        fi
+        emit WG_EXISTS yes
+        emit WG_PORT "${exist_port:-$ARG_WG_PORT}"
+        _emit_wg_client_conf
+        echo "RESULT=ok"
+        trap - EXIT
+        return
+    fi
+
+    # probe видел WG, но conf вне /etc/wireguard (docker/wg-easy и т.п.) — пира
+    # добавить некуда. Используем как бэкенд как есть, conf импортируется вручную.
+    if [ "$ARG_WG_ADOPT" = "1" ]; then
+        log "WireGuard managed externally - import client conf manually"
+        emit WG_EXISTS yes
+        emit WG_PORT "$ARG_WG_PORT"
+        echo "RESULT=ok"
+        trap - EXIT
+        return
+    fi
+
+    if ! command -v wg >/dev/null 2>&1 || ! command -v wg-quick >/dev/null 2>&1; then
+        log "installing wireguard-tools"
+        _wg_pkg_install
+        command -v wg >/dev/null 2>&1 && command -v wg-quick >/dev/null 2>&1 \
+            || die "wireguard-tools install failed"
+    fi
+
+    # Порт свободен? best-effort через ss (если есть).
+    if command -v ss >/dev/null 2>&1 && ss -uln 2>/dev/null | grep -q ":$ARG_WG_PORT "; then
+        die "udp port $ARG_WG_PORT busy"
+    fi
+
+    mkdir -p "$WG_DIR"
+    echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/99-free-turn-proxy-wg.conf 2>/dev/null || true
+    sysctl -q -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+
+    local wan srv_priv srv_pub cli_priv cli_pub
+    wan=$(ip route show default 2>/dev/null | awk '/default/ {print $5; exit}' || true)
+    [ -z "$wan" ] && log "WAN interface not detected; NAT rules skipped"
+    # Без iptables PostUp валит wg-quick up целиком — лучше туннель без NAT, чем фейл.
+    if [ -n "$wan" ] && ! command -v iptables >/dev/null 2>&1; then
+        wan=""
+        log "iptables not found; NAT rules skipped"
+    fi
+
+    ( umask 077; wg genkey > "$WG_DIR/server.key"; wg genkey > "$WG_DIR/client.key" )
+    srv_priv=$(cat "$WG_DIR/server.key"); srv_pub=$(wg pubkey < "$WG_DIR/server.key")
+    cli_priv=$(cat "$WG_DIR/client.key"); cli_pub=$(wg pubkey < "$WG_DIR/client.key")
+
+    local postup="" postdown=""
+    if [ -n "$wan" ]; then
+        postup="PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o $wan -j MASQUERADE"
+        postdown="PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o $wan -j MASQUERADE"
+    fi
+
+    ( umask 077
+      cat > "$WG_CONF" <<EOF
+[Interface]
+Address = $WG_NET.1/24
+ListenPort = $ARG_WG_PORT
+PrivateKey = $srv_priv
+$postup
+$postdown
+
+[Peer]
+# первый клиент (его конфиг — $WG_CLIENT_CONF)
+PublicKey = $cli_pub
+AllowedIPs = $WG_NET.2/32
+EOF
+    )
+
+    # Полуподнятый интерфейс прошлой неудачной попытки даёт «wg0 already exists»
+    # на wg-quick up — сносим перед стартом. modprobe — свежепоставленный пакет
+    # мог ещё не загрузить модуль ядра.
+    if ip link show "$WG_IFACE" >/dev/null 2>&1; then
+        wg-quick down "$WG_IFACE" >/dev/null 2>&1 \
+            || ip link delete "$WG_IFACE" >/dev/null 2>&1 || true
+    fi
+    modprobe wireguard >/dev/null 2>&1 || true
+
+    if ! systemctl enable --now "wg-quick@$WG_IFACE" >/dev/null 2>&1; then
+        local up_out=""
+        if ! up_out=$(wg-quick up "$WG_IFACE" 2>&1); then
+            # Хвост реальной ошибки — в лог, иначе диагностировать нечего.
+            log "wg-quick: $(printf '%s' "$up_out" | tail -n 3 | tr '\n' ';')"
+            die "wg-quick up $WG_IFACE failed"
+        fi
+        # Поднялись вручную — автозапуск после ребута всё равно включаем.
+        systemctl enable "wg-quick@$WG_IFACE" >/dev/null 2>&1 || true
+    fi
+
+    # Endpoint = локальный free-turn-proxy клиент на устройстве; рантайм приложения
+    # подменяет его при поднятии туннеля, тут — рабочий дефолт.
+    ( umask 077
+      cat > "$WG_CLIENT_CONF" <<EOF
+[Interface]
+PrivateKey = $cli_priv
+Address = $WG_NET.2/32
+DNS = 1.1.1.1
+
+[Peer]
+PublicKey = $srv_pub
+AllowedIPs = 0.0.0.0/0
+Endpoint = $ARG_WG_ENDPOINT
+PersistentKeepalive = 25
+EOF
+    )
+
+    emit WG_EXISTS no
+    emit WG_PORT "$ARG_WG_PORT"
+    _emit_wg_client_conf
+    echo "RESULT=ok"
+    trap - EXIT
+}
+
 _kill_old_services() {
     log "stopping old services (vk-turn-proxy) if any"
     if has_systemd; then
@@ -523,12 +788,23 @@ _kill_old_services() {
     fi
 }
 
+# Best-effort: открыть внешний udp-порт в UFW, если он активен. Прочие firewall
+# не трогаем (cloud-провайдеры обычно рулят портами своей панелью).
+_open_firewall() {
+    local port="${ARG_LISTEN##*:}"
+    [[ "$port" =~ ^[0-9]+$ ]] || return 0
+    if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
+        ufw allow "${port}/udp" >/dev/null 2>&1 || true
+    fi
+}
+
 cmd_start() {
     parse_args "$@"
     [ -n "$ARG_LISTEN" ]  || die "--listen required"
     [ -n "$ARG_CONNECT" ] || die "--connect required"
-    
+
     _kill_old_services
+    _open_firewall
 
     case "$(current_runtime)" in
         systemd) cmd_start_systemd ;;
@@ -599,6 +875,7 @@ main() {
     case "$sub" in
         probe)        cmd_probe ;;
         install)      cmd_install "$@" ;;
+        wg-setup)     cmd_wg_setup "$@" ;;
         start)        cmd_start "$@" ;;
         stop)         cmd_stop ;;
         logs)         cmd_logs "$@" ;;

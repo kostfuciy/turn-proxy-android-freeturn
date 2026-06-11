@@ -57,6 +57,7 @@ import com.freeturn.app.ui.screens.ServerManagementScreen
 import com.freeturn.app.ui.screens.ServersListScreen
 import com.freeturn.app.ui.screens.SettingsScreen
 import com.freeturn.app.ui.screens.SshSetupScreen
+import com.freeturn.app.ui.screens.setup.ServerSetupScreen
 import com.freeturn.app.viewmodel.ProxyState
 import com.freeturn.app.viewmodel.SettingsViewModel
 import com.freeturn.app.viewmodel.ProxyViewModel
@@ -75,6 +76,7 @@ object Routes {
     const val HOME = "home"
     const val LOGS = "logs"
     const val ADD_SERVER = "add_server"
+    const val SELF_HOSTED_SETUP = "self_hosted_setup"
 
     // Settings-флоу: Настройки → Серверы → [сервер] → подключение / сервер
     const val SETTINGS = "settings"
@@ -250,9 +252,16 @@ private fun AppNavHost(
                     settingsViewModel = settingsViewModel,
                     proxyViewModel = proxyViewModel,
                     onOpenLogs = { navController.navigate(Routes.LOGS) },
-                    // Хаб сервера живёт в графе настроек — нижний бар подсветит «Настройки»,
-                    // системный «назад» вернёт на главную.
-                    onOpenServerSettings = { id -> navController.navigate(Routes.serverDetail(id)) },
+                    // Хаб живёт в графе настроек. Прямой navigate отсюда пушил бы
+                    // settings-экраны в стек вкладки «Главная» — save/restore вкладок
+                    // портится (хаб «залипает», переходы по бару ломаются). Поэтому
+                    // сперва честно переключаем вкладку, затем пушим хаб в её стек.
+                    onOpenServerSettings = { id ->
+                        navController.navigateToTab(Routes.SETTINGS_GRAPH)
+                        // singleTop: восстановленный стек настроек мог уже держать
+                        // этот хаб сверху — без него destination задваивается.
+                        navController.navigate(Routes.serverDetail(id)) { launchSingleTop = true }
+                    },
                     // CTA пустого состояния — вкладка добавления сервера (tab-переход,
                     // не push: иначе бар перестаёт возвращать на главную).
                     onAddServer = { navController.navigateToTab(Routes.ADD_GRAPH) }
@@ -263,11 +272,34 @@ private fun AppNavHost(
             }
         }
 
+        // Вкладка «+»: мастер self-hosted живёт целиком в этом графе. Кросс-графовый
+        // push (хаб из вкладки «+») ломал restoreState при переключении вкладок —
+        // сервер создаётся мастером, в конце переходим на главную.
         navigation(startDestination = Routes.ADD_SERVER, route = Routes.ADD_GRAPH) {
             composable(Routes.ADD_SERVER) {
                 AddServerScreen(
-                    settingsViewModel = settingsViewModel,
-                    onServerCreated = { id -> navController.navigate(Routes.serverDetail(id)) }
+                    onSelfHosted = { navController.navigate(Routes.SELF_HOSTED_SETUP) },
+                    // Ручная настройка: создаём пустой сервер и уводим в его хаб.
+                    // Хаб живёт в графе настроек — тот же tab-switch + singleTop-push,
+                    // что у HomeScreen.onOpenServerSettings (кросс-графовый push ломает
+                    // restoreState вкладок).
+                    onManualCreate = { name ->
+                        settingsViewModel.addManualServer(name) { id ->
+                            navController.navigateToTab(Routes.SETTINGS_GRAPH)
+                            navController.navigate(Routes.serverDetail(id)) { launchSingleTop = true }
+                        }
+                    }
+                )
+            }
+            composable(Routes.SELF_HOSTED_SETUP) {
+                ServerSetupScreen(
+                    onClose = { navController.popBackStack() },
+                    onFinished = {
+                        // Чистим стек вкладки «+» до корня и уходим на главную —
+                        // новый сервер уже активен, хиро готов к запуску.
+                        navController.popBackStack(Routes.ADD_SERVER, inclusive = false)
+                        navController.navigateToTab(Routes.HOME_GRAPH)
+                    }
                 )
             }
         }
@@ -319,8 +351,7 @@ private fun AppNavHost(
                     onOpenConnection = { navController.navigate(Routes.clientSetup(id)) },
                     onOpenConnectionMode = { navController.navigate(Routes.connectionMode(id)) },
                     onOpenServerSettings = { navController.navigate(Routes.serverManagement(id)) },
-                    onOpenNerdInfo = { navController.navigate(Routes.nerdInfo(id)) },
-                    onConfigureSsh = { navController.navigate(Routes.SSH_SETUP) }
+                    onOpenNerdInfo = { navController.navigate(Routes.nerdInfo(id)) }
                 )
             }
 

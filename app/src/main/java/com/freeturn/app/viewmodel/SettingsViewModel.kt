@@ -9,6 +9,7 @@ import com.freeturn.app.ProxyServiceState
 import com.freeturn.app.data.AppPreferences
 import com.freeturn.app.data.ClientConfig
 import com.freeturn.app.data.ObfProfile
+import com.freeturn.app.data.Server
 import com.freeturn.app.data.ServersSnapshot
 import com.freeturn.app.domain.AppUpdater
 import com.freeturn.app.domain.LocalProxyManager
@@ -16,7 +17,6 @@ import com.freeturn.app.domain.ProxyOrchestrator
 import com.freeturn.app.domain.SshRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -140,12 +140,18 @@ class SettingsViewModel(
     // --- Servers ---
 
     /**
-     * Создаёт пустой сервер (хранилище гарантирует уникальное имя и активирует
-     * первый) и возвращает id. Запись идёт в viewModelScope: уход с экрана до
-     * завершения её не отменяет.
+     * Создаёт пустой сервер (ручная настройка): только имя, остальное — дефолты.
+     * Не активирует (кроме первого — правило addServer): пустая запись не должна
+     * перебивать рабочий активный сервер. [onAdded] получает id для перехода в хаб.
+     * Sync OFF: без SSH пушить нечего, а sync ON прятал бы «Настройки сервера»
+     * (serverSettingsAvailable) — пользователь не смог бы донастроить сервер.
      */
-    suspend fun addServer(name: String): String =
-        viewModelScope.async { prefs.addServer(name) }.await()
+    fun addManualServer(name: String, onAdded: (String) -> Unit) {
+        viewModelScope.launch {
+            val server = Server(name = name, client = ClientConfig(syncServerSwitches = false))
+            onAdded(prefs.addServer(server))
+        }
+    }
 
     fun renameServer(id: String, name: String) {
         viewModelScope.launch { prefs.renameServer(id, name) }

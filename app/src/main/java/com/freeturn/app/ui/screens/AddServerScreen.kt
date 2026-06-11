@@ -18,52 +18,53 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.freeturn.app.R
+import com.freeturn.app.ui.HapticUtil
 import com.freeturn.app.ui.components.SectionLabel
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.components.SettingsEntryRow
 import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.components.SettingsRowIcon
-import com.freeturn.app.viewmodel.SettingsViewModel
-import kotlinx.coroutines.launch
 
 /**
- * Экран «Добавить сервер» (вкладка «+»). Работает только self-hosted сценарий:
- * создаёт пустой сервер и уводит в его хаб. Импорт по ссылке, из файла и по QR
- * ещё не реализованы — показаны выключенными с бейджем «Скоро».
+ * Экран «Добавить сервер» (вкладка «+»). Self-hosted уводит в мастер установки
+ * (SSH → опросник → установка) — сервер создаётся только после его успешного
+ * завершения. Ручная настройка создаёт пустой сервер по имени — дальше пользователь
+ * настраивает его сам в хабе. Импорт по ссылке, из файла и по QR ещё не реализованы —
+ * показаны выключенными с бейджем «Скоро».
  */
 @Composable
 fun AddServerScreen(
-    settingsViewModel: SettingsViewModel,
-    onServerCreated: (String) -> Unit
+    onSelfHosted: () -> Unit,
+    onManualCreate: (String) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val defaultName = stringResource(R.string.add_default_server_name)
-    val scope = rememberCoroutineScope()
-    // Защита от даблтапа: пока создание в полёте, строка выключена.
-    var creating by remember { mutableStateOf(false) }
+    var showManualDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -89,8 +90,6 @@ fun AddServerScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                SectionLabel(stringResource(R.string.add_paste_section))
-                Spacer(Modifier.height(8.dp))
                 PasteLinkField()
 
                 Spacer(Modifier.height(24.dp))
@@ -98,32 +97,30 @@ fun AddServerScreen(
                 SectionLabel(stringResource(R.string.add_methods_section))
                 Spacer(Modifier.height(8.dp))
                 SettingsGroup {
-                    SettingsGroupItem(0, 3) {
+                    SettingsGroupItem(0, 4) {
                         SettingsEntryRow(
                             iconRes = R.drawable.host_24px,
                             title = stringResource(R.string.add_self_hosted_title),
                             subtitle = stringResource(R.string.add_self_hosted_desc),
-                            enabled = !creating,
-                            onClick = {
-                                creating = true
-                                scope.launch {
-                                    try {
-                                        onServerCreated(settingsViewModel.addServer(defaultName))
-                                    } finally {
-                                        creating = false
-                                    }
-                                }
-                            }
+                            onClick = onSelfHosted
                         )
                     }
-                    SettingsGroupItem(1, 3) {
+                    SettingsGroupItem(1, 4) {
+                        SettingsEntryRow(
+                            iconRes = R.drawable.tune_24px,
+                            title = stringResource(R.string.add_manual_title),
+                            subtitle = stringResource(R.string.add_manual_desc),
+                            onClick = { showManualDialog = true }
+                        )
+                    }
+                    SettingsGroupItem(2, 4) {
                         SoonMethodRow(
                             iconRes = R.drawable.description_24px,
                             title = stringResource(R.string.add_from_file_title),
                             subtitle = stringResource(R.string.add_from_file_desc)
                         )
                     }
-                    SettingsGroupItem(2, 3) {
+                    SettingsGroupItem(3, 4) {
                         SoonMethodRow(
                             iconRes = R.drawable.qr_code_scanner_24px,
                             title = stringResource(R.string.add_from_qr_title),
@@ -134,6 +131,51 @@ fun AddServerScreen(
             }
         }
     }
+
+    if (showManualDialog) {
+        ManualNameDialog(
+            onCreate = { name ->
+                showManualDialog = false
+                onManualCreate(name)
+            },
+            onDismiss = { showManualDialog = false }
+        )
+    }
+}
+
+/** Диалог ручной настройки: только имя будущего сервера, остальное — потом в хабе. */
+@Composable
+private fun ManualNameDialog(
+    onCreate: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    var name by rememberSaveable { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.add_manual_title)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.server_name_label)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
+                    onCreate(name)
+                },
+                enabled = name.isNotBlank()
+            ) { Text(stringResource(R.string.add_manual_create)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
 }
 
 /** Поле импорта по ссылке. Неактивно (контент на MD3 disabled 0.38): парсера ссылок ещё нет. */

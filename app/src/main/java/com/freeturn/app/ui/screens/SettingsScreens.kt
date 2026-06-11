@@ -335,8 +335,7 @@ fun ServerDetailScreen(
     onOpenConnection: (String) -> Unit,
     onOpenConnectionMode: (String) -> Unit,
     onOpenServerSettings: (String) -> Unit,
-    onOpenNerdInfo: (String) -> Unit,
-    onConfigureSsh: () -> Unit
+    onOpenNerdInfo: (String) -> Unit
 ) {
     val context = LocalContext.current
     val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
@@ -517,8 +516,7 @@ fun ServerDetailScreen(
                         onRetry = {
                             HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
                             serverViewModel.reconnectSsh()
-                        },
-                        onConfigureSsh = onConfigureSsh
+                        }
                     )
 
                     // Мастер-свитч синхронизации — перенесён из «Настроек сервера» в хаб.
@@ -667,8 +665,7 @@ private fun ServerStatusCard(
     status: ServerHubStatus,
     syncOn: Boolean,
     onActivate: () -> Unit,
-    onRetry: () -> Unit,
-    onConfigureSsh: () -> Unit
+    onRetry: () -> Unit
 ) {
     val reducedMotion = LocalReducedMotion.current
     // Sync OFF — live-фазы ядра (online/connecting/working/failed) нерелевантны: клиент с
@@ -715,7 +712,7 @@ private fun ServerStatusCard(
                     is ServerHubStatus.Working -> BusyContent(s.action)
                     ServerHubStatus.Failed -> FailedContent(onRetry)
                     ServerHubStatus.Offline -> OfflineContent(onActivate)
-                    ServerHubStatus.NotPaired -> NotPairedContent(onConfigureSsh)
+                    ServerHubStatus.NotPaired -> NotPairedContent()
                     ServerHubStatus.SyncOff -> StatusHero(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         title = stringResource(R.string.hub_sync_off)
@@ -861,19 +858,18 @@ private fun OfflineContent(onActivate: () -> Unit) {
     }
 }
 
-/** SSH не настроен — hero + «Настроить подключение» (открывает экран SSH-сетапа). */
+/**
+ * SSH не настроен — только hero-статус. Штатное состояние ручной настройки
+ * (вкладка «+» → «Ручная настройка»): клиентские настройки доступны, серверное
+ * управление — нет. SSH задаётся только мастером, дозавести его нельзя.
+ */
 @Composable
-private fun NotPairedContent(onConfigureSsh: () -> Unit) {
+private fun NotPairedContent() {
     StatusHero(
         color = MaterialTheme.extendedColorScheme.warning,
         title = stringResource(R.string.pill_not_paired),
         subtitle = stringResource(R.string.not_paired_hint)
     )
-    Button(onClick = onConfigureSsh, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        Icon(painterResource(R.drawable.host_24px), contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.configure_ssh))
-    }
 }
 
 /** Тег релиза приходит и как "1.0.3", и как "v1.0.3" — нормализуем без "vv". */

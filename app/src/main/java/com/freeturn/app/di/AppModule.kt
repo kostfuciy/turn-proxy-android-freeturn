@@ -4,8 +4,10 @@ import com.freeturn.app.data.AppPreferences
 import com.freeturn.app.domain.AppUpdater
 import com.freeturn.app.domain.LocalProxyManager
 import com.freeturn.app.domain.ProxyOrchestrator
+import com.freeturn.app.domain.ServerSetupRepository
 import com.freeturn.app.domain.SshRepository
 import com.freeturn.app.viewmodel.ProxyViewModel
+import com.freeturn.app.viewmodel.ServerSetupViewModel
 import com.freeturn.app.viewmodel.ServerViewModel
 import com.freeturn.app.viewmodel.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
@@ -18,8 +20,11 @@ val appModule = module {
     single { SshRepository(androidContext()) }
     single { AppUpdater(androidContext()) }
     single { ProxyOrchestrator(get(), get(), get()) }
+    // factory: своя SSH-сессия на каждый прогон мастера, живой SshRepository не трогаем.
+    factory { ServerSetupRepository(androidContext()) }
 
     viewModelOf(::ProxyViewModel)
     viewModelOf(::ServerViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::ServerSetupViewModel)
 }

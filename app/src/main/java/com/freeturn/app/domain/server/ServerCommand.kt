@@ -7,6 +7,18 @@ package com.freeturn.app.domain.server
 sealed class ServerCommand {
     data object Probe : ServerCommand()
     data object Install : ServerCommand()
+
+    /**
+     * Идемпотентная настройка WireGuard-бэкенда: бутстрап на [port] либо пир в
+     * существующем conf; [endpoint] уходит в клиентский конфиг (локальный
+     * free-turn-proxy клиент устройства). [adopt] — WG уже обнаружен probe-ом:
+     * скрипт не бутстрапит новый, при недоступном conf отвечает ok без конфига.
+     */
+    data class WgSetup(
+        val port: Int,
+        val endpoint: String,
+        val adopt: Boolean = false
+    ) : ServerCommand()
     data class Start(val opts: ServerOptions) : ServerCommand()
     data object Stop : ServerCommand()
     data class FetchLogs(val lines: Int = 80) : ServerCommand()
@@ -14,6 +26,12 @@ sealed class ServerCommand {
     fun toArgv(): List<String> = when (this) {
         is Probe -> listOf("probe")
         is Install -> listOf("install")
+        is WgSetup -> buildList {
+            add("wg-setup")
+            add("--port=$port")
+            add("--endpoint=$endpoint")
+            if (adopt) add("--adopt=1")
+        }
         is Start -> buildList {
             add("start")
             add("--listen=${opts.listen}")

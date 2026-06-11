@@ -6,6 +6,11 @@
 package com.freeturn.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -24,19 +29,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,25 +53,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.freeturn.app.data.SshConfig
 import com.freeturn.app.ui.HapticUtil
-import com.freeturn.app.ui.components.SectionLabel
-import com.freeturn.app.ui.components.SettingsCard
+import com.freeturn.app.ui.components.InlineErrorCard
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
-import com.freeturn.app.ui.components.SettingsFieldSlot
-import com.freeturn.app.ui.components.SettingsRowDivider
+import com.freeturn.app.ui.components.SshFormFields
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.freeturn.app.ui.screens.setup.BusyProgressIndicator
+import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.viewmodel.ServerViewModel
 import com.freeturn.app.viewmodel.SshConnectionState
 import com.freeturn.app.viewmodel.SettingsViewModel
-
-private const val AUTH_PASSWORD = "PASSWORD"
-private const val AUTH_SSH_KEY = "SSH_KEY"
 
 @Composable
 fun SshSetupScreen(
@@ -99,7 +93,6 @@ fun SshSetupScreen(
     var password by remember { mutableStateOf(savedConfig.password) }
     var authType by rememberSaveable(savedConfig.authType) { mutableStateOf(savedConfig.authType) }
     var sshKey by rememberSaveable(savedConfig.sshKey) { mutableStateOf(savedConfig.sshKey) }
-    var showPassword by remember { mutableStateOf(false) }
 
     // Переходим только если подключение было установлено ПОСЛЕ открытия экрана.
     // Если sshState уже Connected при входе (пользователь хочет изменить настройки) —
@@ -112,14 +105,18 @@ fun SshSetupScreen(
 
     val isConnecting = sshState is SshConnectionState.Connecting
     val context = LocalContext.current
+    val reducedMotion = LocalReducedMotion.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    // Форма заполнена достаточно для попытки коннекта — гейтит появление плавающей кнопки.
-    val formValid = ip.isNotBlank() && when (authType) {
-        AUTH_SSH_KEY -> sshKey.isNotBlank()
-        else -> password.isNotBlank()
-    }
-    val showConnectFab = !isConnecting && formValid
+    // Подсветка незаполненных полей — включается тапом по FAB на невалидной форме.
+    var highlightErrors by rememberSaveable { mutableStateOf(false) }
+    val formValid = ip.isNotBlank() &&
+        port.toIntOrNull()?.let { it in 1..65535 } == true &&
+        when (authType) {
+            SshConfig.AUTH_SSH_KEY -> sshKey.isNotBlank()
+            else -> password.isNotBlank()
+        }
+    val showConnectFab = !isConnecting
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -140,22 +137,29 @@ fun SshSetupScreen(
         floatingActionButton = {
             AnimatedVisibility(
                 visible = showConnectFab,
-                enter = scaleIn() + fadeIn(),
-                exit = scaleOut() + fadeOut()
+                enter = if (reducedMotion) EnterTransition.None else scaleIn() + fadeIn(),
+                exit = if (reducedMotion) ExitTransition.None else scaleOut() + fadeOut()
             ) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                        serverViewModel.connectSsh(
-                            SshConfig(
-                                ip = ip.trim(),
-                                port = port.toIntOrNull() ?: 22,
-                                username = username.trim(),
-                                password = password,
-                                authType = authType,
-                                sshKey = sshKey
+                        // Невалидная форма не прячет кнопку: тап подсвечивает поля.
+                        if (!formValid) {
+                            HapticUtil.perform(context, HapticUtil.Pattern.ERROR)
+                            highlightErrors = true
+                        } else {
+                            HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
+                            highlightErrors = false
+                            serverViewModel.connectSsh(
+                                SshConfig(
+                                    ip = ip.trim(),
+                                    port = port.toIntOrNull() ?: 22,
+                                    username = username.trim(),
+                                    password = password,
+                                    authType = authType,
+                                    sshKey = sshKey
+                                )
                             )
-                        )
+                        }
                     },
                     icon = { Icon(painterResource(R.drawable.host_24px), contentDescription = null) },
                     text = { Text(stringResource(R.string.connect_btn)) }
@@ -180,175 +184,28 @@ fun SshSetupScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (!isConnecting) {
-                    FormSection(
+                    SshFormFields(
                         ip = ip, onIpChange = { ip = it },
-                        port = port, onPortChange = { port = it.filter { c -> c.isDigit() } },
+                        port = port, onPortChange = { port = it },
                         username = username, onUsernameChange = { username = it },
                         password = password, onPasswordChange = { password = it },
-                        showPassword = showPassword, onTogglePassword = { showPassword = !showPassword },
                         authType = authType, onAuthTypeChange = { authType = it },
                         sshKey = sshKey, onSshKeyChange = { sshKey = it },
-                        sshState = sshState
+                        showErrors = highlightErrors
                     )
+                    // Ошибка подключения — тональная карточка в тон ошибки.
+                    (sshState as? SshConnectionState.Error)?.let { InlineErrorCard(it.message) }
                 } else {
                     ConnectionProgressCard(step = stringResource(R.string.ssh_connecting))
                 }
 
                 // Клиренс под плавающую кнопку, чтобы FAB не перекрывал нижнее поле.
-                Spacer(Modifier.height(if (showConnectFab) 88.dp else 24.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun FormSection(
-    ip: String, onIpChange: (String) -> Unit,
-    port: String, onPortChange: (String) -> Unit,
-    username: String, onUsernameChange: (String) -> Unit,
-    password: String, onPasswordChange: (String) -> Unit,
-    showPassword: Boolean, onTogglePassword: () -> Unit,
-    authType: String, onAuthTypeChange: (String) -> Unit,
-    sshKey: String, onSshKeyChange: (String) -> Unit,
-    sshState: SshConnectionState
-) {
-    val context = LocalContext.current
-
-    // --- Сервер: адрес и порт ---
-    SectionLabel(stringResource(R.string.server_data))
-    SettingsCard {
-        SettingsFieldSlot {
-            OutlinedTextField(
-                value = ip,
-                onValueChange = onIpChange,
-                label = { Text(stringResource(R.string.server_ip_label)) },
-                placeholder = { Text(stringResource(R.string.server_ip_placeholder)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-            )
-        }
-        SettingsRowDivider()
-        SettingsFieldSlot {
-            OutlinedTextField(
-                value = port,
-                onValueChange = onPortChange,
-                label = { Text(stringResource(R.string.ssh_port)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-        }
-    }
-
-    // --- Аутентификация: логин, способ входа, секрет ---
-    SectionLabel(stringResource(R.string.authentication))
-    SettingsCard {
-        SettingsFieldSlot {
-            OutlinedTextField(
-                value = username,
-                onValueChange = onUsernameChange,
-                label = { Text(stringResource(R.string.username)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        }
-        SettingsRowDivider()
-        // Способ входа — выпадающий селект (дропдаун вернули вместо сегментов).
-        SettingsFieldSlot {
-            var authDropdownExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = authDropdownExpanded,
-                onExpandedChange = { authDropdownExpanded = it },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = if (authType == AUTH_PASSWORD) stringResource(R.string.password)
-                            else stringResource(R.string.private_key),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.ssh_auth_method)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = authDropdownExpanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                val clearance by animateDpAsState(
+                    targetValue = if (showConnectFab) 88.dp else 24.dp,
+                    animationSpec = if (reducedMotion) snap() else spring(),
+                    label = "fab_clearance"
                 )
-                ExposedDropdownMenu(
-                    expanded = authDropdownExpanded,
-                    onDismissRequest = { authDropdownExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.password)) },
-                        onClick = {
-                            HapticUtil.perform(context, HapticUtil.Pattern.SELECTION)
-                            onAuthTypeChange(AUTH_PASSWORD)
-                            authDropdownExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.private_key)) },
-                        onClick = {
-                            HapticUtil.perform(context, HapticUtil.Pattern.SELECTION)
-                            onAuthTypeChange(AUTH_SSH_KEY)
-                            authDropdownExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-        SettingsRowDivider()
-        SettingsFieldSlot {
-            if (authType == AUTH_PASSWORD) {
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = onPasswordChange,
-                    label = { Text(stringResource(R.string.password)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            HapticUtil.perform(context, HapticUtil.Pattern.SELECTION)
-                            onTogglePassword()
-                        }) {
-                            Icon(
-                                painterResource(if (showPassword) R.drawable.visibility_off_24px else R.drawable.visibility_24px),
-                                contentDescription = if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
-                            )
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                )
-            } else {
-                OutlinedTextField(
-                    value = sshKey,
-                    onValueChange = onSshKeyChange,
-                    label = { Text(stringResource(R.string.private_key_pem)) },
-                    placeholder = { Text(stringResource(R.string.private_key_placeholder)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp),
-                    maxLines = 10
-                )
-            }
-        }
-    }
-
-    // Ошибка подключения — тональная карточка в тон ошибки.
-    if (sshState is SshConnectionState.Error) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.errorContainer,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.error_24px), null, tint = MaterialTheme.colorScheme.error)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    sshState.message,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Spacer(Modifier.height(clearance))
             }
         }
     }
@@ -377,7 +234,7 @@ private fun ConnectionProgressCard(step: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
+            BusyProgressIndicator()
 
             Text(
                 text = step,
@@ -385,11 +242,22 @@ private fun ConnectionProgressCard(step: String) {
                 textAlign = TextAlign.Center
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 steps.forEachIndexed { index, label ->
                     val isDone = index < currentIndex
                     val isActive = index == currentIndex
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Статус шага иконкой и цветом TalkBack не видит — отдаём stateDescription.
+                    val stateDesc = stringResource(when {
+                        isDone -> R.string.setup_task_state_done
+                        isActive -> R.string.setup_task_state_active
+                        else -> R.string.setup_task_state_pending
+                    })
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.semantics(mergeDescendants = true) {
+                            stateDescription = stateDesc
+                        }
+                    ) {
                         Icon(
                             painter = painterResource(when {
                                 isDone -> R.drawable.check_circle_24px
@@ -404,12 +272,13 @@ private fun ConnectionProgressCard(step: String) {
                             },
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(Modifier.width(10.dp))
+                        Spacer(Modifier.width(12.dp))
                         Text(
                             label,
                             style = MaterialTheme.typography.bodyMedium,
+                            // Будущие шаги — onSurfaceVariant: контент, не disabled.
                             color = if (isActive || isDone) MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

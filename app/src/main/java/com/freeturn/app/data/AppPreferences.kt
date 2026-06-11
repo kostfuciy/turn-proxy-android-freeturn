@@ -233,16 +233,16 @@ class AppPreferences(context: Context) {
     }
 
     /**
-     * Создаёт пустой сервер с уникальным именем и возвращает его id.
-     * Первый сервер в списке сразу становится активным.
+     * Добавляет сконфигурированный сервер (имя уникализируется) и возвращает его id.
+     * [activate] делает сервер активным сразу; первый сервер активируется всегда.
      */
-    suspend fun addServer(baseName: String): String {
-        val server = Server(name = baseName.trim())
+    suspend fun addServer(server: Server, activate: Boolean = false): String {
         context.dataStore.edit { prefs ->
             val list = ServerJson.decodeList(prefs[SERVERS_JSON])
-            val named = server.copy(name = uniqueServerName(server.name, list))
+            val base = server.name.trim().ifBlank { Server.FALLBACK_NAME }
+            val named = server.copy(name = uniqueServerName(base, list))
             prefs[SERVERS_JSON] = ServerJson.encodeList(list + named)
-            if (list.isEmpty()) prefs[ACTIVE_SERVER_ID] = named.id
+            if (activate || list.isEmpty()) prefs[ACTIVE_SERVER_ID] = named.id
         }
         return server.id
     }

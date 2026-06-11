@@ -65,11 +65,14 @@ fun SectionLabel(text: String) {
 
 /** Карточка-группа: тональный контейнер со скруглением, строки внутри. */
 @Composable
-fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+fun SettingsCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(content = content)
     }
