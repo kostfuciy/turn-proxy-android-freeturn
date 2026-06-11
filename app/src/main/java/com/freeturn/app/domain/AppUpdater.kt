@@ -51,8 +51,7 @@ class AppUpdater(private val context: Context) {
             if (isNewer(remoteVersion, getCurrentVersion())) {
                 latestApkUrl = findApkUrl(release)
                 if (latestApkUrl != null) {
-                    val changelog = release.optString("body", "").trim()
-                    _state.value = UpdateState.Available(remoteVersion, changelog)
+                    _state.value = UpdateState.Available(remoteVersion)
                 } else {
                     _state.value = if (silent) UpdateState.Idle
                     else UpdateState.Error("APK не найден в релизе")

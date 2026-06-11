@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,25 +44,7 @@ internal fun UpdateDialogs(
             AlertDialog(
                 onDismissRequest = { dismissedVersion = state.version },
                 title = { Text(stringResource(R.string.update_available_title)) },
-                text = {
-                    Column {
-                        Text(stringResource(R.string.update_available, state.version))
-                        if (state.changelog.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            Column(
-                                modifier = Modifier
-                                    .heightIn(max = 200.dp)
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                Text(
-                                    state.changelog,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                },
+                text = { Text(stringResource(R.string.update_available, state.version)) },
                 confirmButton = {
                     TextButton(onClick = {
                         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
