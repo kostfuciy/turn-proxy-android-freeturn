@@ -19,10 +19,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:ignore="RequestInstallPackagesInsights,RequestInstallPackagesPolicy" />
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
+        tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission" />
 
     <queries>
         <intent>
@@ -96,12 +98,7 @@
 
         <receiver
             android:name=".ProxyReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.freeturn.app.START_PROXY" />
-                <action android:name="com.freeturn.app.STOP_PROXY" />
-            </intent-filter>
-        </receiver>
+            android:exported="false" />
 
         <service
             android:name=".ProxyTileService"

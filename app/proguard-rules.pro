@@ -23,9 +23,6 @@
     volatile <fields>;
 }
 
-# ── DataStore ─────────────────────────────────────────────────────────────────
--keep class androidx.datastore.** { *; }
-
 # ── Compile-only аннотации (errorprone/javax) не включены в runtime ───────────
 -dontwarn com.google.errorprone.annotations.CanIgnoreReturnValue
 -dontwarn com.google.errorprone.annotations.CheckReturnValue
