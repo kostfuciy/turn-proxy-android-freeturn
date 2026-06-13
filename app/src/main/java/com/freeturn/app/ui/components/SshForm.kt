@@ -54,17 +54,13 @@ fun SshFormFields(
     SectionLabel(stringResource(R.string.server_data))
     SettingsCard {
         SettingsFieldSlot {
-            OutlinedTextField(
+            LabeledTextField(
                 value = ip,
                 onValueChange = onIpChange,
-                label = { Text(stringResource(R.string.server_ip_label)) },
-                placeholder = { Text(stringResource(R.string.server_ip_placeholder)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                labelRes = R.string.server_ip_label,
+                placeholderRes = R.string.server_ip_placeholder,
                 isError = showErrors && ip.isBlank(),
-                supportingText = if (showErrors && ip.isBlank()) {
-                    { Text(stringResource(R.string.setup_field_required)) }
-                } else null,
+                errorRes = R.string.setup_field_required,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next
@@ -73,16 +69,12 @@ fun SshFormFields(
         }
         SettingsRowDivider()
         SettingsFieldSlot {
-            OutlinedTextField(
+            LabeledTextField(
                 value = port,
                 onValueChange = { onPortChange(it.filter { c -> c.isDigit() }) },
-                label = { Text(stringResource(R.string.ssh_port)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                labelRes = R.string.ssh_port,
                 isError = showErrors && portInvalid,
-                supportingText = if (showErrors && portInvalid) {
-                    { Text(stringResource(R.string.setup_port_invalid)) }
-                } else null,
+                errorRes = R.string.setup_port_invalid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -95,12 +87,10 @@ fun SshFormFields(
     SectionLabel(stringResource(R.string.authentication))
     SettingsCard {
         SettingsFieldSlot {
-            OutlinedTextField(
+            LabeledTextField(
                 value = username,
                 onValueChange = onUsernameChange,
-                label = { Text(stringResource(R.string.username)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                labelRes = R.string.username,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
         }
