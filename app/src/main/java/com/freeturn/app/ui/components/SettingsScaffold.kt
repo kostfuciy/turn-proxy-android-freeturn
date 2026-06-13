@@ -22,24 +22,24 @@ import androidx.compose.ui.unit.dp
 import com.freeturn.app.R
 import com.freeturn.app.ui.theme.Spacing
 
-// Каркас экранов настроек (Settings-флоу и «Режим подключения»): ширина колонки,
-// заголовок секции, карточка-контейнер, слот контрола, разделитель, кнопка «назад».
-// Один источник — чтобы экраны выглядели одинаково и не дублировали верстку.
+// Каркас экранов настроек (Settings-флоу и "Режим подключения"): ширина колонки,
+// заголовок секции, карточка-контейнер, слот контрола, разделитель, кнопка "назад".
+// Один источник - чтобы экраны выглядели одинаково и не дублировали верстку.
 
-/** Макс. ширина контента — читаемая колонка на планшетах/foldable (MD3 large+). */
+/** Макс. ширина контента - читаемая колонка на планшетах/foldable (MD3 large+). */
 val SettingsContentMaxWidth = 840.dp
 
 // Левый отступ inset-разделителя = иконка(40) + отступ слева(16) + зазор(16).
 private val RowDividerIndent = 72.dp
 
-/** Заголовок секции — мелкий акцентный лейбл над карточкой-группой. */
+/** Заголовок секции - мелкий акцентный лейбл над карточкой-группой. */
 @Composable
 fun SectionLabel(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        // heading() — TalkBack прыгает между секциями.
+        // heading() - TalkBack прыгает между секциями.
         modifier = Modifier
             .padding(start = Spacing.xs)
             .semantics { heading() }
@@ -62,7 +62,7 @@ fun SettingsCard(
 }
 
 /**
- * Слот для произвольного контрола внутри [SettingsCard] — текстовое поле, слайдер,
+ * Слот для произвольного контрола внутри [SettingsCard] - текстовое поле, слайдер,
  * сегменты, метка. Единый внутренний отступ (как у строк) + вертикальный зазор между
  * вложенными элементами. Несколько слотов в одной карточке разделяй [SettingsRowDivider].
  */
@@ -91,7 +91,7 @@ fun SettingsControlLabel(title: String, desc: String? = null) {
     }
 }
 
-/** Кнопка «назад» в шапке экранов настроек — один источник для всего settings-флоу. */
+/** Кнопка "назад" в шапке экранов настроек - один источник для всего settings-флоу. */
 @Composable
 fun SettingsBackButton(onBack: () -> Unit) {
     IconButton(onClick = onBack) {

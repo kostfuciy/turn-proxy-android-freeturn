@@ -34,9 +34,9 @@ import com.freeturn.app.ui.theme.Spacing
 
 /**
  * Общая строка-сервер сегментированной группы: аватар, имя/подзаголовок, опциональный
- * trailing. Используется списком «Настройки → Серверы» и нижним листом на главном.
+ * trailing. Используется списком "Настройки -> Серверы" и нижним листом на главном.
  * Выбранность несёт тон контейнера (secondaryContainer, как у selected-элементов M3)
- * + насыщенный аватар; для TalkBack — selected + бейдж «Активный» в contentDescription.
+ * + насыщенный аватар; для TalkBack - selected + бейдж "Активный" в contentDescription.
  */
 @Composable
 fun ServerRow(
@@ -45,11 +45,11 @@ fun ServerRow(
     isActive: Boolean,
     shape: Shape,
     onClick: () -> Unit,
-    // Лист на главном сам лежит на surfaceContainerLow — ему нужен контейнер потемнее.
+    // Лист на главном сам лежит на surfaceContainerLow - ему нужен контейнер потемнее.
     inactiveContainer: Color = MaterialTheme.colorScheme.surfaceContainerLow,
-    /** Простой иконко-трейлинг (шеврон навигации) — тинт согласован с подзаголовком. */
+    /** Простой иконко-трейлинг (шеврон навигации) - тинт согласован с подзаголовком. */
     trailingIconRes: Int? = null,
-    /** Интерактивный трейлинг (IconButton) — у него свой тач-таргет, край прижимается. */
+    /** Интерактивный трейлинг (IconButton) - у него свой тач-таргет, край прижимается. */
     trailing: (@Composable () -> Unit)? = null
 ) {
     val container = if (isActive) MaterialTheme.colorScheme.secondaryContainer
@@ -77,7 +77,7 @@ fun ServerRow(
                 }
                 .padding(
                     start = 16.dp,
-                    // У trailing-кнопки собственный тач-таргет — прижимаем её к краю.
+                    // У trailing-кнопки собственный тач-таргет - прижимаем её к краю.
                     end = if (trailing != null) 4.dp else 16.dp,
                     top = 12.dp,
                     bottom = 12.dp
@@ -126,7 +126,7 @@ fun ServerRow(
     }
 }
 
-/** Пустой список серверов — общий [EmptyState]. */
+/** Пустой список серверов - общий [EmptyState]. */
 @Composable
 fun EmptyServersState(modifier: Modifier = Modifier) {
     EmptyState(

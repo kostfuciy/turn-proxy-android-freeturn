@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Готовая ссылка для result-sheet (после peer-add или повторной выдачи).
- *  [wg] — фактический тип выданного доступа (для бейджа протокола). */
+ *  [wg] - фактический тип выданного доступа (для бейджа протокола). */
 data class ShareResult(val userName: String, val link: String, val wg: Boolean)
 
 /** Цель отзыва: WG-пир ([pubkey]) либо cid-гость без пира ([clientId]). */
@@ -31,10 +31,10 @@ data class RevokeTarget(
 )
 
 data class ShareUiState(
-    /** Серверы с SSH-доступом — только ими можно делиться. */
+    /** Серверы с SSH-доступом - только ими можно делиться. */
     val sshServers: List<Server> = emptyList(),
     val selectedServerId: String? = null,
-    /** Фактическое состояние выбранного сервера; null — ещё не загружено. */
+    /** Фактическое состояние выбранного сервера; null - ещё не загружено. */
     val shareInfo: ShareInfo? = null,
     val infoLoading: Boolean = false,
     val infoError: String? = null,
@@ -60,10 +60,10 @@ data class ShareUiState(
     /** Тип выдаваемого доступа: WG только если сервер это умеет И владелец не выбрал прокси. */
     val useWg: Boolean get() = shareInfo?.wgBackend == true && !shareAsProxy
 
-    /** Сервер умеет WG-бэкенд → показываем выбор «WireGuard / Прокси». */
+    /** Сервер умеет WG-бэкенд -> показываем выбор "WireGuard / Прокси". */
     val canChooseMode: Boolean get() = shareInfo?.wgBackend == true
 
-    /** Без адреса ссылка соберётся с пустым peer — получатель её не распарсит. */
+    /** Без адреса ссылка соберётся с пустым peer - получатель её не распарсит. */
     val missingAddress: Boolean
         get() = selectedServer?.client?.serverAddress?.isBlank() == true
 
@@ -73,9 +73,9 @@ data class ShareUiState(
 }
 
 /**
- * Состояние вкладки «Поделиться»: создание именованного пира (суб-вкладка
- * «Соединение») и управление выданными доступами (суб-вкладка «Пользователи»).
- * Все серверные операции — через [ShareRepository] (отдельная SSH-сессия).
+ * Состояние вкладки "Поделиться": создание именованного пира (суб-вкладка
+ * "Соединение") и управление выданными доступами (суб-вкладка "Пользователи").
+ * Все серверные операции - через [ShareRepository] (отдельная SSH-сессия).
  */
 class ShareViewModel(
     private val repo: ShareRepository,
@@ -138,7 +138,7 @@ class ShareViewModel(
     fun setUserName(name: String) =
         _uiState.update { it.copy(userName = name.take(MAX_USER_NAME_LEN), createError = null) }
 
-    /** Выбор типа доступа на WG-сервере: true — прокси-ссылка (без WG-пира). */
+    /** Выбор типа доступа на WG-сервере: true - прокси-ссылка (без WG-пира). */
     fun setShareMode(proxy: Boolean) =
         _uiState.update { it.copy(shareAsProxy = proxy, createError = null) }
 
@@ -149,7 +149,7 @@ class ShareViewModel(
         loadInfoIfNeeded(id)
     }
 
-    /** Начальная загрузка share-info — вызывается экраном после enter-перехода. */
+    /** Начальная загрузка share-info - вызывается экраном после enter-перехода. */
     fun ensureInfoLoaded() {
         val st = _uiState.value
         if (st.shareInfo == null && !st.infoLoading && st.infoError == null) {
@@ -158,7 +158,7 @@ class ShareViewModel(
     }
 
     /** Тихий рефреш серверной правды при заходе на экран: run.args могли смениться
-     *  apply/рестартом. Кэш не чистим и спиннер не показываем — открытие из кэша
+     *  apply/рестартом. Кэш не чистим и спиннер не показываем - открытие из кэша
      *  мгновенное; [ShareUiState.shareInfo] обновляем только если реально изменилось. */
     fun revalidateInfo() {
         val st = _uiState.value
@@ -190,7 +190,7 @@ class ShareViewModel(
             result.onSuccess { infoCache[id] = it }
             val current = _uiState.value.selectedServerId
             if (current != id) {
-                // Сервер переключили, пока ходили по SSH, — результат не наш,
+                // Сервер переключили, пока ходили по SSH, - результат не наш,
                 // перезапускаем загрузку для актуального выбора.
                 _uiState.update { it.copy(infoLoading = false) }
                 current?.let(::loadInfoIfNeeded)
@@ -208,7 +208,7 @@ class ShareViewModel(
         }
     }
 
-    /** WG-бэкенд → новый пир + ссылка с conf; иначе — прокси-доступ без пира.
+    /** WG-бэкенд -> новый пир + ссылка с conf; иначе - прокси-доступ без пира.
      *  В обоих случаях гость получает свежий cid в allowlist сервера. */
     fun createShare() {
         val st = _uiState.value
@@ -240,7 +240,7 @@ class ShareViewModel(
                     }
                     .onFailure(::commitCreateError)
             } else {
-                // Прокси-доступ: cid в allowlist, ссылка без WG-conf (импорт → прокси-режим).
+                // Прокси-доступ: cid в allowlist, ссылка без WG-conf (импорт -> прокси-режим).
                 repo.addClient(server.ssh, userName, cid)
                     .onSuccess {
                         commitCreated(
@@ -286,8 +286,8 @@ class ShareViewModel(
 
     fun dismissResult() = _uiState.update { it.copy(result = null) }
 
-    /** Подгрузка «Пользователей»: WG-пиры (если есть бэкенд) + allowlist-гости
-     *  без пира — одной SSH-сессией (share-list). */
+    /** Подгрузка "Пользователей": WG-пиры (если есть бэкенд) + allowlist-гости
+     *  без пира - одной SSH-сессией (share-list). */
     fun refreshPeers(force: Boolean = false) {
         val st = _uiState.value
         val server = st.selectedServer ?: return
@@ -295,7 +295,7 @@ class ShareViewModel(
         _uiState.update { it.copy(peersLoading = true, peersError = null) }
         viewModelScope.launch {
             val result = repo.listShared(server.ssh)
-            // Сервер переключили, пока ходили по SSH, — результат не наш.
+            // Сервер переключили, пока ходили по SSH, - результат не наш.
             if (_uiState.value.selectedServerId != server.id) return@launch
             result
                 .onSuccess { (peers, clients) ->
@@ -325,7 +325,7 @@ class ShareViewModel(
         _uiState.update { it.copy(resharePubkey = peer.pubkey, peersError = null) }
         viewModelScope.launch {
             val result = repo.peerConf(server.ssh, peer.pubkey, ClientId.generate(), peer.name)
-            // Сервер переключили, пока ходили по SSH, — результат не наш.
+            // Сервер переключили, пока ходили по SSH, - результат не наш.
             if (_uiState.value.selectedServerId != server.id) return@launch
             result
                 .onSuccess { access ->

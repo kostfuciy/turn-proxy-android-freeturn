@@ -32,8 +32,8 @@ class SshRepository(
     private val _sshLog = MutableStateFlow<List<String>>(emptyList())
     val sshLog: StateFlow<List<String>> = _sshLog.asStateFlow()
 
-    // Идёт ли запрос server.log. Сам вывод уходит в sshLog (через runCmd → logCmdResult),
-    // отдельного состояния журнала нет — он часть единого SSH-лога.
+    // Идёт ли запрос server.log. Сам вывод уходит в sshLog (через runCmd -> logCmdResult),
+    // отдельного состояния журнала нет - он часть единого SSH-лога.
     private val _journalLoading = MutableStateFlow(false)
     val journalLoading: StateFlow<Boolean> = _journalLoading.asStateFlow()
 
@@ -57,7 +57,7 @@ class SshRepository(
 
     private fun logCmdResult(result: CmdResult) {
         // Одним обновлением состояния: построчный append на длинном выводе (журнал
-        // на 200 строк) дёргал подписчиков UI — бейдж и автоскролл — на каждую строку.
+        // на 200 строк) дёргал подписчиков UI (бейдж и автоскролл) на каждую строку.
         val batch = buildList {
             addAll(result.logs)
             when (result) {
@@ -112,7 +112,7 @@ class SshRepository(
 
     /**
      * @param silent пропустить промежуточный [ServerState.Checking]. Нужно при перепроверке
-     * после действия (стоп/старт/установка): иначе хаб моргает Working→«Подключение»→Online.
+     * после действия (стоп/старт/установка): иначе хаб моргает Working -> "Подключение" -> Online.
      * При silent текущий Working держится до прихода [ServerState.Known].
      */
     suspend fun checkServerState(config: SshConfig? = null, silent: Boolean = false) {
@@ -164,7 +164,7 @@ class SshRepository(
                 if (needsRestart) {
                     appendSshLog("  NEEDS_RESTART=yes → авто-рестарт сервера")
                     runCmd(cfg, "Авто-остановка перед рестартом", ServerCommand.Stop)
-                    // start вызвать без аргументов нельзя — нужны listen/connect.
+                    // start вызвать без аргументов нельзя - нужны listen/connect.
                     // Их знает только VM. Сигнализируем через отдельный outcome,
                     // VM решает, как стартовать (с актуальными prefs).
                 }
@@ -251,8 +251,8 @@ class SshRepository(
 
 sealed class InstallOutcome {
     /**
-     * stage: cached | downloaded; version — только если ядро вернуло.
-     * needsRestart — true, если бинарь был переустановлен поверх работающего
+     * stage: cached | downloaded; version - только если ядро вернуло.
+     * needsRestart - true, если бинарь был переустановлен поверх работающего
      * процесса; перед использованием новой версии нужен start.
      */
     data class Success(

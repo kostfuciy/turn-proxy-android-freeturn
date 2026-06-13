@@ -1,5 +1,5 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-// ImageProxy.image помечен @ExperimentalGetImage — стандартный путь для ML Kit-анализатора.
+// ImageProxy.image помечен @ExperimentalGetImage - стандартный путь для ML Kit-анализатора.
 @file:androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 
 package com.freeturn.app.ui.screens.share
@@ -69,7 +69,7 @@ import com.freeturn.app.ui.theme.Spacing
 /**
  * QR-сканер импорта freeturn://-ссылки. Валидная ссылка уходит в [LinkImportBus]
  * (ImportSheet всплывёт поверх любого экрана), экран закрывается. Чужие QR
- * игнорируются — сканер продолжает работать.
+ * игнорируются - сканер продолжает работать.
  */
 @Composable
 fun QrScannerScreen(onBack: () -> Unit) {
@@ -87,7 +87,7 @@ fun QrScannerScreen(onBack: () -> Unit) {
         contract = ActivityResultContracts.RequestPermission()
     ) { result ->
         granted = result
-        // «Навсегда» — только когда система больше не покажет диалог
+        // "Навсегда" - только когда система больше не покажет диалог
         // (rationale=false после отказа); первый Deny оставляет повторный запрос.
         val activity = context.findActivity()
         permanentlyDenied = !result && activity != null &&
@@ -97,7 +97,7 @@ fun QrScannerScreen(onBack: () -> Unit) {
         if (!granted) launcher.launch(Manifest.permission.CAMERA)
     }
 
-    // Разрешение могли выдать в настройках системы — перечитываем по возврату.
+    // Разрешение могли выдать в настройках системы - перечитываем по возврату.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -161,7 +161,7 @@ fun QrScannerScreen(onBack: () -> Unit) {
 private fun CameraPreview(onResult: (String) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    // Колбэк может смениться при рекомпозиции — analyzer живёт дольше.
+    // Колбэк может смениться при рекомпозиции - analyzer живёт дольше.
     val onResultCurrent by rememberUpdatedState(onResult)
 
     val previewView = remember {
@@ -175,7 +175,7 @@ private fun CameraPreview(onResult: (String) -> Unit) {
                 .build()
         )
     }
-    // ML Kit видит один QR в нескольких кадрах подряд — результат отдаём один раз.
+    // ML Kit видит один QR в нескольких кадрах подряд - результат отдаём один раз.
     val handled = remember { AtomicBoolean(false) }
 
     DisposableEffect(lifecycleOwner) {
@@ -220,7 +220,7 @@ private fun CameraPreview(onResult: (String) -> Unit) {
                     analysis
                 )
             } catch (_: Exception) {
-                // Гонка с lifecycle stop — экран уже закрывается.
+                // Гонка с lifecycle stop - экран уже закрывается.
             }
         }, ContextCompat.getMainExecutor(context))
 

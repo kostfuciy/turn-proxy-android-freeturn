@@ -54,8 +54,8 @@ import com.freeturn.app.ui.theme.Spacing
 private const val ONLINE_WINDOW_SEC = 180L
 
 /**
- * Суб-вкладка «Пользователи»: WG-пиры выбранного сервера + allowlist-гости без
- * пира (прокси-доступ при tcp/Xray-бэкенде). Повторная выдача ссылки — для пиров
+ * Суб-вкладка "Пользователи": WG-пиры выбранного сервера + allowlist-гости без
+ * пира (прокси-доступ при tcp/Xray-бэкенде). Повторная выдача ссылки - для пиров
  * с сохранённым conf и для всех cid-гостей; пир владельца защищён от отзыва.
  */
 @Composable
@@ -144,7 +144,7 @@ fun ShareUsersTab(
                         UserRow(
                             name = client.name.ifEmpty { stringResource(R.string.share_peer_unnamed) },
                             subtitle = stringResource(R.string.share_client_proxy_access),
-                            // Прокси-гость без WG-пира — статус подключения серверу неизвестен.
+                            // Прокси-гость без WG-пира - статус подключения серверу неизвестен.
                             online = false,
                             resharing = false,
                             canReshare = true,
@@ -198,7 +198,6 @@ private fun UserRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        // Действия — в overflow-меню: ряд не загромождён парой иконок.
         when {
             resharing -> Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 LoadingIndicator(modifier = Modifier.size(24.dp))
@@ -268,8 +267,8 @@ private fun UserRowMenu(
     }
 }
 
-/** Пульсирующая точка «в сети» на углу аватара. При reduced-motion — статичная.
- *  Кольцо цвета карточки отделяет точку от фона иконки. */
+/** Точка "в сети" на углу аватара. Кольцо цвета карточки отделяет её от фона
+ *  иконки. При reduced-motion не пульсирует. */
 @Composable
 private fun OnlineDot(modifier: Modifier = Modifier) {
     val pulse = if (LocalReducedMotion.current) 1f else {

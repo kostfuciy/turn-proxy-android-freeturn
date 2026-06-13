@@ -1,14 +1,8 @@
 package com.freeturn.app.data
 
 /**
- * Единый источник истины для argv клиентского ядра. Использует и движок
- * ([com.freeturn.app.proxy.ProxyService] при запуске процесса), и UI (отладочная информация →
- * параметры запуска), чтобы показанная команда не расходилась с реально запускаемой.
- *
- * Возвращает аргументы БЕЗ имени бинарника. DNS оператора ([carrierDns]) резолвится
- * только в движке (зависит от активной сети); в UI передаём null — флаг -dns-servers
- * (оператор) тогда опускается, он добавится лишь при реальном запуске. [ownClientId]
- * аналогично: ID устройства знает движок, UI передаёт null.
+ * Единый источник истины для argv клиентского ядра.
+ * Возвращает аргументы без имени бинарника. [carrierDns] и [ownClientId] резолвятся движком.
  */
 object CoreArgs {
 
@@ -30,11 +24,10 @@ object CoreArgs {
         }
         // tcp-форвард (Xray/sing-box) vs udp-релей (WireGuard, дефолт).
         if (cfg.tcpForward) { add("-mode"); add("tcp") }
-        // Bond — client-only в новом ядре (сервер детектит по magic-префиксу); только в tcp.
+        // Bond - client-only в новом ядре (сервер детектит по magic-префиксу); только в tcp.
         if (cfg.tcpForward && cfg.bond) add("-bond")
         if (cfg.useUdp) { add("-transport"); add("udp") }
-        // Обфускация: профиль+ключ из общего serverOpts. Без валидного 64-hex не шлём —
-        // ядро упадёт на DecodeKey.
+        // Обфускация: шлём только валидный 64-hex ключ, иначе ядро упадет.
         if (srv.obfEnabled && ObfProfile.isValidKey(srv.obfKey)) {
             add("-obf-profile"); add(srv.obfProfile)
             add("-obf-key"); add(srv.obfKey)
@@ -49,7 +42,7 @@ object CoreArgs {
                 carrierDns?.takeIf { it.isNotBlank() }?.let { add("-dns-servers"); add(it) }
             }
         }
-        // -dns-mode: plain|doh (auto — дефолт ядра, не шлём).
+        // -dns-mode: plain|doh (auto - дефолт ядра, не шлём).
         if (cfg.dnsMode == DnsMode.PLAIN || cfg.dnsMode == DnsMode.DOH) {
             add("-dns-mode"); add(cfg.dnsMode)
         }
@@ -57,8 +50,7 @@ object CoreArgs {
         if (cfg.magicSwitch) {
             cfg.magicTurn.trim().takeIf { it.isNotEmpty() }?.let { add("-turn"); add(it) }
         }
-        // -client-id: cid из share-ссылки (импортированный доступ) либо общий ID
-        // устройства — сервер с -clients-file пускает только ID из allowlist.
+        // -client-id: cid из ссылки или общий ID устройства.
         val clientId = cfg.clientId.ifBlank { ownClientId.orEmpty() }
         if (clientId.isNotBlank()) { add("-client-id"); add(clientId) }
     }

@@ -23,8 +23,8 @@ import com.freeturn.app.ui.components.SettingsSwitchRow
 import com.freeturn.app.ui.util.redact
 
 /**
- * «Дополнительно»: транспорт TURN (tcp/udp, ортогонален режиму туннеля), сегментированная
- * группа свитчей (капча + bond — bond только в TCP-режиме), альтернативный TURN-узел.
+ * "Дополнительно": транспорт TURN (tcp/udp, ортогонален режиму туннеля), сегментированная
+ * группа свитчей (капча + bond - bond только в TCP-режиме), альтернативный TURN-узел.
  */
 @Composable
 internal fun AdvancedSection(
@@ -64,8 +64,8 @@ internal fun AdvancedSection(
         }
     }
 
-    // Капча + Bond — сегментированная группа свитчей.
-    // Bond — client-only флаг (сервер детектит сам), только в TCP-режиме.
+    // Капча + Bond - сегментированная группа свитчей.
+    // Bond - client-only флаг (сервер детектит сам), только в TCP-режиме.
     val toggleCount = if (showBond) 2 else 1
     SettingsGroup {
         SettingsGroupItem(0, toggleCount) {
@@ -88,7 +88,7 @@ internal fun AdvancedSection(
         }
     }
 
-    // Альтернативный TURN-узел — свитч + адрес (раскрывается при включении).
+    // Альтернативный TURN-узел - свитч + адрес (раскрывается при включении).
     SettingsCard {
         SettingsSwitchRow(
             title = stringResource(R.string.magic_switch),

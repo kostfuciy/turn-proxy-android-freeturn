@@ -25,7 +25,7 @@ import com.freeturn.app.ui.theme.Spacing
 
 /**
  * Шаг 1 мастера: SSH-доступ к серверу. Во время проверки форма заменяется
- * busy-карточкой; ошибка — тональной карточкой под формой.
+ * busy-карточкой; ошибка - тональной карточкой под формой.
  */
 @Composable
 fun SetupSshStep(
@@ -81,7 +81,7 @@ fun SetupSshStep(
     if (error != null) InlineErrorCard(error)
 }
 
-/** Wavy-индикатор; при reduced motion — обычная полоса без волновой анимации. */
+/** Wavy-индикатор; при reduced motion - обычная полоса без волновой анимации. */
 @Composable
 internal fun BusyProgressIndicator(modifier: Modifier = Modifier) {
     if (LocalReducedMotion.current) {

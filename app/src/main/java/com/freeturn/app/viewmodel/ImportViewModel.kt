@@ -22,21 +22,21 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ImportUiState(
-    /** Распарсенная ссылка; null — sheet скрыт. */
+    /** Распарсенная ссылка; null - sheet скрыт. */
     val link: FreeturnLink? = null,
     val serverName: String = "",
-    /** Звонок получателя — обязателен (в ссылку не входит, уникален на клиента). */
+    /** Звонок получателя - обязателен (в ссылку не входит, уникален на клиента). */
     val vkLink: String = "",
-    /** Сервер с таким же адресом уже есть — предупреждение, не блокировка. */
+    /** Сервер с таким же адресом уже есть - предупреждение, не блокировка. */
     val duplicateAddress: Boolean = false,
-    /** Точное совпадение WG-conf — этот доступ уже импортирован. */
+    /** Точное совпадение WG-conf - этот доступ уже импортирован. */
     val duplicateConf: Boolean = false,
     /** Ссылка не распарсилась (показывается отдельным диалогом). */
     val parseError: Boolean = false,
     val saving: Boolean = false,
-    /** Сохранение упало (например, битый DataStore) — sheet остаётся открытым. */
+    /** Сохранение упало (например, битый DataStore) - sheet остаётся открытым. */
     val saveError: Boolean = false,
-    /** Импорт завершён — success-состояние sheet. */
+    /** Импорт завершён - success-состояние sheet. */
     val saved: Boolean = false
 ) {
     val canConfirm: Boolean
@@ -45,8 +45,8 @@ data class ImportUiState(
 
 /**
  * Импорт сервера по freeturn://-ссылке. Слушает [LinkImportBus] (deep link,
- * QR, вставка) — sheet всплывает из любого места приложения. Импортированный
- * сервер не управляется (пустой SSH) — только клиентское подключение.
+ * QR, вставка) - sheet всплывает из любого места приложения. Импортированный
+ * сервер не управляется (пустой SSH) - только клиентское подключение.
  */
 class ImportViewModel(
     private val prefs: AppPreferences,
@@ -136,7 +136,7 @@ class ImportViewModel(
                 tunnelTransport = if (wgConf.isNotEmpty()) TunnelTransport.WIREGUARD
                 else TunnelTransport.NONE,
                 wireGuardConfig = wgConf,
-                // cid из ссылки — владелец уже посадил его в allowlist сервера.
+                // cid из ссылки - владелец уже посадил его в allowlist сервера.
                 clientId = link.clientId.trim()
             ),
             opts = ServerOpts(

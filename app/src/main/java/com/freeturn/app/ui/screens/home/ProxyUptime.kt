@@ -6,9 +6,9 @@ import androidx.compose.runtime.produceState
 import kotlinx.coroutines.delay
 
 /**
- * Форматирует uptime прокси в «mm:ss» или «h:mm:ss», тикая раз в секунду.
+ * Форматирует uptime прокси в "mm:ss" или "h:mm:ss", тикая раз в секунду.
  *
- * Источник времени — `SystemClock.elapsedRealtime()`, как и у `connectedSince`
+ * Источник времени - `SystemClock.elapsedRealtime()`, как и у `connectedSince`
  * в `ProxyServiceState`: это устойчиво к переводу системных часов (обычный
  * `System.currentTimeMillis()` при изменении времени показал бы отрицательные
  * или разорванные интервалы).
@@ -31,9 +31,9 @@ internal fun rememberProxyUptime(connectedSince: Long?): String? {
     val h = totalSec / 3600
     val m = (totalSec % 3600) / 60
     val s = totalSec % 60
-    // Ведущий ноль у минут, чтобы строка не прыгала при переходе 9:59 → 10:00.
+    // Ведущий ноль у минут, чтобы строка не прыгала при переходе 9:59 -> 10:00.
     // Вместе с fontFeatureSettings="tnum" у Text это даёт полностью стабильную
     // ширину в первый час работы. Смена ширины остаётся только на переходе
-    // 59:59 → 1:00:00 (раз за сессию) и 9:59:59 → 10:00:00.
+    // 59:59 -> 1:00:00 (раз за сессию) и 9:59:59 -> 10:00:00.
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
 }

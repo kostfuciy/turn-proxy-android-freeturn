@@ -1,6 +1,6 @@
 package com.freeturn.app.domain
 
-// SSH connection states
+/** Состояние SSH-подключения к активному серверу. */
 sealed class SshConnectionState {
     object Disconnected : SshConnectionState()
     object Connecting : SshConnectionState()
@@ -8,14 +8,14 @@ sealed class SshConnectionState {
     data class Error(val message: String) : SshConnectionState()
 }
 
-// Remote server states
+/** Состояние удалённого сервера free-turn-proxy. */
 sealed class ServerState {
     object Unknown : ServerState()
     object Checking : ServerState()
     data class Known(
         val installed: Boolean,
         val running: Boolean,
-        /** true → сервер запущен с -mode tcp. null если не запущен/неизвестно. */
+        /** true - сервер запущен с -mode tcp. null если не запущен/неизвестно. */
         val tcpMode: Boolean? = null,
         /** Профиль обфускации сервера (none|rtpopus). null если не запущен/неизвестно. */
         val obfProfile: String? = null,
@@ -25,38 +25,32 @@ sealed class ServerState {
     data class Error(val message: String) : ServerState()
 }
 
-// Local proxy client states
+/** Состояние локального прокси-клиента. */
 sealed class ProxyState {
     object Idle : ProxyState()
-    // Процесс поднимается, ещё не было ни одной строки, которая подтвердила бы
-    // работу соединения — жёлтый.
+    // Процесс поднимается, подтверждения соединения ещё нет.
     object Starting : ProxyState()
-    // Процесс работает, но ни один поток/сессия не подключены (active == 0) — жёлтый.
-    // total == 0 означает, что мы пока не знаем целевое число потоков.
+    // Процесс работает, но потоки/сессии ещё не подключены.
     data class Connecting(val active: Int, val total: Int) : ProxyState()
-    // Хотя бы один поток/сессия подключены — зелёный. active <= total.
+    // Хотя бы один поток/сессия подключены.
     data class Running(val active: Int, val total: Int) : ProxyState()
     data class Error(val message: String) : ProxyState()
     data class CaptchaRequired(val url: String, val sessionId: Long = 0L) : ProxyState()
 }
 
-// Результат старта прокси-сервиса (мост ProxyService → ProxyViewModel).
+/** Результат старта прокси-сервиса (мост ProxyService -> ProxyViewModel). */
 sealed class StartupResult {
     data object Success : StartupResult()
     data class Failed(val message: String) : StartupResult()
 }
 
-/**
- * Сессия ручной капчи. sessionId позволяет диалогу различать соседние
- * капча-сессии с одинаковым URL и пересоздавать WebView через `key(sessionId)`.
- */
+/** Сессия ручной капчи. sessionId нужен для пересоздания WebView при одинаковом URL. */
 data class CaptchaSession(val url: String, val sessionId: Long)
 
 /**
- * Агрегированная статистика подключений прокси-ядра.
- *
- * - [active] — число реально живых каналов (DTLS-потоков для udp-релея, smux-сессий для tcp-режима).
- * - [total]  — целевое число каналов. 0 означает «ещё неизвестно» (tcp-режим до первой waiting-строки).
+ * Статистика подключений ядра.
+ * [active] - живые каналы.
+ * [total] - целевое число каналов (0 = неизвестно).
  */
 data class ConnectionStats(val active: Int, val total: Int) {
     companion object {
@@ -64,7 +58,7 @@ data class ConnectionStats(val active: Int, val total: Int) {
     }
 }
 
-// App update states
+/** Состояние проверки/загрузки обновления приложения. */
 sealed class UpdateState {
     object Idle : UpdateState()
     object Checking : UpdateState()

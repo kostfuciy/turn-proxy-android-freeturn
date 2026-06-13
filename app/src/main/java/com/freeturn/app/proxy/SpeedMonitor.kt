@@ -9,7 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Опрашивает TrafficStats по UID раз в 3с и отдаёт строку «↓ rx ↑ tx» в [onSpeed].
+ * Опрашивает TrafficStats по UID раз в 3с и отдаёт строку "↓ rx ↑ tx" в [onSpeed].
  * Цикл живёт пока [isStopped] не вернёт true (или scope не отменят).
  */
 class SpeedMonitor(

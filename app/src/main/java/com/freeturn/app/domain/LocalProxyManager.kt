@@ -1,4 +1,4 @@
-package com.freeturn.app.domain
+﻿package com.freeturn.app.domain
 
 import android.content.Context
 import android.content.Intent
@@ -20,9 +20,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Управляет жизненным циклом прокси-сервиса: старт, стоп, отслеживание состояния.
- * Создаётся как Koin `single` и живёт в Application scope — `destroy()` не вызывается
- * намеренно, так как scope привязан к процессу приложения.
+ * Управляет жизненным циклом прокси-сервиса (Koin `single`, Application scope).
  */
 class LocalProxyManager(private val context: Context) {
 
@@ -42,7 +40,7 @@ class LocalProxyManager(private val context: Context) {
 
     private suspend fun observeProxyLifecycle() {
         ProxyServiceState.proxyFailed.collect {
-            setErrorWithAutoReset("Прокси упал ${CoreProcessController.MAX_RESTARTS} раз — проверьте настройки")
+            setErrorWithAutoReset("Прокси упал ${CoreProcessController.MAX_RESTARTS} раз - проверьте настройки")
         }
     }
 
@@ -82,12 +80,8 @@ class LocalProxyManager(private val context: Context) {
     }
 
     /**
-     * Переводит UI в Connecting/Running в зависимости от числа активных каналов.
-     * - active == 0 + процесс жив → жёлтый (Connecting).
-     * - active  > 0               → зелёный (Running).
-     *
-     * Captcha и Error имеют приоритет и не перезаписываются, пока активны.
-     * Starting тоже не трогаем: он снимается StartupResult-логикой в startProxy.
+     * Переводит UI в Connecting/Running по числу активных каналов.
+     * Приоритет у Captcha и Error.
      */
     private suspend fun observeConnectionStats() {
         ProxyServiceState.connectionStats.collect { stats ->
@@ -143,12 +137,8 @@ class LocalProxyManager(private val context: Context) {
             context.startService(intent)
         }
 
-        // Умное ожидание стартапа. Watchdog внутри сервиса делает до MAX_RESTARTS
-        // попыток с backoff до 30с — фиксированный таймаут (20с) обрывал UI ещё
-        // на первой-второй ретрай-итерации. Теперь ждём пока:
-        //   • сервис не отдаст StartupResult (Success/Failed), ИЛИ
-        //   • сервис не остановится сам (watchdog исчерпал лимит → isRunning=false).
-        // Верхняя граница в 5 минут — страховка от подвисшего сервиса.
+        // Ждём StartupResult или остановки сервиса.
+        // Верхняя граница в 5 минут - страховка от зависания.
         val result = withTimeoutOrNull(5 * 60_000L) {
             // Дождаться, что сервис фактически поднялся (onStartCommand).
             ProxyServiceState.isRunning.first { it }
@@ -212,3 +202,4 @@ class LocalProxyManager(private val context: Context) {
         _proxyState.value = ProxyState.Idle
     }
 }
+

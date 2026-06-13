@@ -56,7 +56,7 @@ import com.freeturn.app.viewmodel.ShareResult
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Длиннее QR не рисуем (нечитаемые мелкие модули) — остаются share sheet и
+ * Длиннее QR не рисуем (нечитаемые мелкие модули) - остаются share sheet и
  * копирование. Типовая ссылка с WG-conf ~700 символов, запас двукратный.
  */
 private const val QR_MAX_CHARS = 1200
@@ -66,7 +66,7 @@ private const val QR_MAX_CHARS = 1200
 fun ShareResultSheet(result: ShareResult, shareInfo: ShareInfo?, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val reducedMotion = LocalReducedMotion.current
-    // Лист сразу на полную высоту (без peek-промежутка) — QR крупный, кнопки внизу.
+    // Лист сразу на полную высоту (без peek-промежутка) - QR крупный, кнопки внизу.
     val sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden,
         enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
@@ -93,7 +93,7 @@ fun ShareResultSheet(result: ShareResult, shareInfo: ShareInfo?, onDismiss: () -
                 textAlign = TextAlign.Center
             )
 
-            // Протокол — по факту выданного доступа (result.wg), обфускация — из share-info.
+            // Протокол - по факту выданного доступа (result.wg), обфускация - из share-info.
             val obfOn = shareInfo?.let {
                 it.obfProfile.isNotEmpty() && it.obfProfile != ObfProfile.NONE
             } ?: false
@@ -106,7 +106,7 @@ fun ShareResultSheet(result: ShareResult, shareInfo: ShareInfo?, onDismiss: () -
                 textAlign = TextAlign.Center
             )
 
-            // QR — самосайзится: квадрат до 320dp по ширине листа.
+            // QR самосайзится: квадрат до 320dp по ширине листа.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,12 +140,11 @@ fun ShareResultSheet(result: ShareResult, shareInfo: ShareInfo?, onDismiss: () -
                 }
             }
 
-            // Только иконки: copy/share узнаваемы без подписей, подпись — в a11y.
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
                 FilledTonalIconButton(
                     onClick = {
                         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-                        // Ссылка несёт WG PrivateKey и obf-ключ — прячем из превью буфера.
+                        // Ссылка несёт WG PrivateKey и obf-ключ - прячем из превью буфера.
                         context.copyToClipboard("freeturn link", result.link, sensitive = true)
                     },
                     modifier = Modifier.size(56.dp)
@@ -178,7 +177,7 @@ fun ShareResultSheet(result: ShareResult, shareInfo: ShareInfo?, onDismiss: () -
     }
 }
 
-/** Протокол выданного доступа + признак обфускации — пилюлями над QR. */
+/** Протокол выданного доступа + признак обфускации - пилюлями над QR. */
 @Composable
 private fun ProtocolPill(wg: Boolean, obfOn: Boolean) {
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {

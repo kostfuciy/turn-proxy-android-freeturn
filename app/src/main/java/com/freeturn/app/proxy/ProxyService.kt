@@ -18,10 +18,8 @@ import kotlinx.coroutines.cancel
 import org.koin.android.ext.android.inject
 
 /**
- * Foreground-сервис локального прокси (FGS-тип specialUse). Тонкий shell: держит
- * lifecycle, wakelock и foreground-нотификацию, делегируя процесс/watchdog
- * [CoreProcessController], нотификации [ProxyNotifier], хендовер сети
- * [NetworkHandoverMonitor], скорость [SpeedMonitor].
+ * Foreground-сервис локального прокси (FGS-тип specialUse).
+ * Делегирует логику [CoreProcessController], [ProxyNotifier], [NetworkHandoverMonitor].
  */
 class ProxyService : Service() {
 
@@ -61,12 +59,9 @@ class ProxyService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // ВАЖНО: startForeground вызываем ПЕРВЫМ делом и БЕЗУСЛОВНО — любой return до
-        // него даёт ForegroundServiceDidNotStartInTimeException через ~5с.
+        // ВАЖНО: startForeground вызываем первым для избежания ForegroundServiceDidNotStartInTimeException.
         notifier.prepareConnecting()
-        // Явно передаём FGS-тип (specialUse доступен с API 34; ниже — без типа).
-        // try/catch: ForegroundServiceStartNotAllowedException (API 31+ при старте из
-        // фона) и InvalidForegroundServiceTypeException не должны ронять процесс.
+        // try/catch для обхода ForegroundServiceStartNotAllowedException и InvalidForegroundServiceTypeException.
         val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
         try {
@@ -79,8 +74,7 @@ class ProxyService : Service() {
             return START_NOT_STICKY
         }
 
-        // Процесс ядра ещё жив — это повторный onStartCommand (sticky-рестарт). Второй
-        // процесс не плодим, требование startForeground выше уже выполнено.
+        // Повторный onStartCommand (sticky-рестарт) - не плодим второй процесс.
         if (controller.isRunning) {
             ProxyServiceState.setRunning(true)
             return START_STICKY
@@ -98,8 +92,7 @@ class ProxyService : Service() {
 
     private fun acquireWakeLock() {
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        // Освобождаем предыдущий wakelock перед созданием нового — иначе при повторном
-        // onStartCommand с уже мёртвым процессом старый объект висит held до GC (утечка).
+        // Освобождаем wakelock во избежание утечек при повторном onStartCommand.
         if (wakeLock?.isHeld == true) wakeLock?.release()
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VkTurn::BgLock")
         wakeLock?.acquire(TimeUnit.HOURS.toMillis(24))

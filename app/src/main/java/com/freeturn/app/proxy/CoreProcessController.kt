@@ -1,4 +1,4 @@
-package com.freeturn.app.proxy
+﻿package com.freeturn.app.proxy
 
 import android.content.Context
 import android.os.Handler
@@ -32,10 +32,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /**
- * Управляет нативным процессом ядра: запуск, чтение лога, реакция на события
- * (капча / quota-error / startup / WireGuard) и watchdog-перезапуск с backoff.
- * Живёт внутри [ProxyService]; о необходимости остановить сервис сообщает через
- * [onStopRequested] (вместо прямого stopSelf).
+ * Управляет нативным процессом ядра: запуск, чтение лога, события и watchdog.
+ * Сообщает [ProxyService] об остановке через [onStopRequested].
  */
 class CoreProcessController(
     private val context: Context,
@@ -47,7 +45,7 @@ class CoreProcessController(
 ) {
     companion object {
         const val MAX_RESTARTS = 8
-        // Даём TURN-туннелю «устаканиться» перед поднятием WireGuard поверх него.
+        // Даём TURN-туннелю "устаканиться" перед поднятием WireGuard поверх него.
         private const val WIREGUARD_START_DELAY_MS = 2_000L
     }
 
@@ -68,10 +66,10 @@ class CoreProcessController(
         scope.launch { startBinaryProcess() }
     }
 
-    /** Сменилась физическая сеть — рвём процесс, watchdog поднимет на новой сети. */
+    /** Сменилась физическая сеть - рвём процесс, watchdog поднимет на новой сети. */
     fun onNetworkHandover() {
         if (userStopped.get() || process.get() == null) return
-        ProxyServiceState.addLog("Смена сети — переподключение")
+        ProxyServiceState.addLog("Смена сети - переподключение")
         notifier.setStatus(context.getString(R.string.notif_proxy_network_change))
         restartCount.set(0)
         process.get()?.destroyCompat()
@@ -84,8 +82,8 @@ class CoreProcessController(
     }
 
     /**
-     * onDestroy, шаг 2: гасим процесс и WG-туннель. Teardown WG — блокирующий JNI/IO,
-     * держать им поток onDestroy нельзя (ANR); уводим на отдельный поток без ожидания.
+     * onDestroy, шаг 2: гасим процесс и WG-туннель.
+     * Teardown WG уводим на отдельный поток без ожидания (защита от ANR).
      */
     fun destroyProcessAndTunnel() {
         process.get()?.destroyCompat()
@@ -98,15 +96,10 @@ class CoreProcessController(
 
         val cfg = prefs.clientConfigFlow.first()
         ProxyServiceState.setLogsEnabled(cfg.logsEnabled)
-        // Obf-обфускация управляется на серверном экране, но должна передаваться и
-        // клиенту с тем же ключом, иначе DTLS-handshake не сойдётся. Источник истины —
-        // общий serverOpts.
+        // Obf-ключ должен совпадать с сервером для DTLS-handshake.
         val srv = prefs.serverOptsFlow.first()
 
-        // Имя ядра версионируется (libfreeturn-<ver>-android-arm64.so) и меняется между
-        // релизами — не хардкодим. Ищем в nativeLibraryDir libfreeturn*.so (Android
-        // извлекает туда только lib*.so). При нескольких версиях берём лексикографически
-        // старшую.
+        // Ищем ядро (libfreeturn*.so) в nativeLibraryDir (лексикографически старшее).
         val libDir = File(context.applicationInfo.nativeLibraryDir)
         val executable = libDir.listFiles { f ->
             f.name.startsWith("libfreeturn") && f.name.endsWith(".so")
@@ -131,9 +124,7 @@ class CoreProcessController(
             cmdArgs.addAll(parts.drop(1))
         } else {
             cmdArgs.add(executable)
-            // argv строит общий с UI билдер ([CoreArgs.client]) — показанная команда не
-            // расходится с реально запускаемой. DNS оператора резолвим здесь (зависит от
-            // активной сети) и передаём в билдер.
+            // Резолвим DNS активной сети и строим аргументы запуска.
             val carrierDnsValue = if (cfg.useCarrierDns) carrierDns() else null
             cmdArgs.addAll(CoreArgs.client(cfg, srv, carrierDnsValue, prefs.ownClientId()))
         }
@@ -145,11 +136,8 @@ class CoreProcessController(
         var wireGuardStarted = false
         var captchaSessionCounter = 0L
 
-        // --- Трекинг активных соединений для индикации состояния в UI. ---
-        // UDP-релей (-mode udp): каждый поток логирует свой [STREAM N] Established/Closed
-        // парой (defer Closed ставится ДО логирования Established, см. client/main.go).
-        // Для UDP-релея целевое число потоков известно из конфига (-n). Если threads == 0,
-        // ядро запускает один поток, считаем total = 1.
+        // Трекинг соединений: для UDP-релея целевое число известно (-n).
+        // Если threads == 0, считаем total = 1.
         val tracker = CoreConnectionTracker(
             udpTotal = if (cfg.isRawMode) 0 else if (cfg.threads > 0) cfg.threads else 1,
             tcpMode = cfg.tcpForward
@@ -166,13 +154,10 @@ class CoreProcessController(
 
             val proc = withContext(Dispatchers.IO) {
                 val pb = ProcessBuilder(cmdArgs).redirectErrorStream(true)
-                // Ядро по умолчанию пишет vk_profile.json в CWD (= /data/app/.../lib/<abi>/),
-                // а это read-only mount на Android. Перенаправляем в filesDir. См.
-                // client/profiles.go: profileFilePath() читает $VK_PROFILE_PATH первым.
+                // Перенаправляем vk_profile.json из read-only CWD в filesDir.
                 pb.environment()["VK_PROFILE_PATH"] =
                     File(context.filesDir, "vk_profile.json").absolutePath
-                // CWD тоже подменяем на writeable dir — на случай если Go-код пишет
-                // относительными путями (логи кеша tls-client и т.п.).
+                // CWD подменяем на writeable dir для логов кэша tls-client и т.п.
                 pb.directory(context.filesDir)
                 pb.start()
             }
@@ -184,10 +169,7 @@ class CoreProcessController(
                     line = try {
                         reader.readLine()
                     } catch (e: java.io.IOException) {
-                        // При destroyCompat()/Process.destroy() с другого треда нативный
-                        // pipe закрывается, и блокирующий readLine() бросает IOException
-                        // ("Stream closed" / "read interrupted by close()"). Это нормальный
-                        // путь остановки — выходим из цикла молча.
+                        // При остановке процесса pipe закрывается, readLine() бросает IOException.
                         val msg = e.message.orEmpty()
                         val benign = userStopped.get() ||
                             msg.contains("interrupted by close", ignoreCase = true) ||
@@ -202,14 +184,11 @@ class CoreProcessController(
                     val l = line
                     ProxyServiceState.addLog(l)
 
-                    // Разбор строки — в CoreLogParser (чистая логика, под юнит-тестами);
-                    // здесь только реакция на события.
+                    // Реакция на события из CoreLogParser.
                     val events = CoreLogParser.parse(l)
                     var statsChanged = false
                     for (event in events) when (event) {
-                        // Детекция URL ручной капчи. Каждый раз выдаём новый sessionId,
-                        // чтобы диалог пересоздавал WebView, даже если URL не поменялся
-                        // (бинарник всегда использует http://localhost:8765).
+                        // Новый sessionId заставляет диалог пересоздать WebView.
                         is CoreLogEvent.CaptchaUrl -> {
                             captchaSessionCounter += 1
                             ProxyServiceState.setCaptchaSession(
@@ -217,8 +196,7 @@ class CoreProcessController(
                             )
                             notifier.showCaptcha()
                         }
-                        // Закрываем диалог — следующая капча-сессия откроет его заново
-                        // через новый sessionId.
+                        // Капча решена, закрываем диалог.
                         CoreLogEvent.CaptchaResolved -> {
                             if (ProxyServiceState.captchaSession.value != null) {
                                 ProxyServiceState.setCaptchaSession(null)
@@ -229,10 +207,7 @@ class CoreProcessController(
                     }
                     if (statsChanged) publishStats()
 
-                    // Startup: ядро упало с panic/fatal/окончательно не смогло получить
-                    // creds ДО первого подключения — считаем запуск неудачным. Первая
-                    // строка без этих маркеров больше не трактуется как Success (ядро
-                    // могло написать "Connecting..." и только потом упасть).
+                    // Провал старта, если ядро упало или не получило creds до подключения.
                     if (!startupEmitted) {
                         val hasFatal = events.any { it is CoreLogEvent.FatalStartup }
                         val hasConnection = tracker.hasConnection
@@ -267,7 +242,7 @@ class CoreProcessController(
                                     )
                                 } catch (e: Exception) {
                                     val message = e.message ?: e.javaClass.simpleName
-                                    ProxyServiceState.addLog("WireGuard: ошибка запуска — $message")
+                                    ProxyServiceState.addLog("WireGuard: ошибка запуска - $message")
                                     ProxyServiceState.setStartupResult(
                                         StartupResult.Failed("WireGuard не запустился: $message")
                                     )
@@ -283,7 +258,7 @@ class CoreProcessController(
                     // compareAndSet гарантирует единственный postDelayed даже при параллельных quota-ошибках
                     if (events.any { it is CoreLogEvent.QuotaError } &&
                         sessionKillScheduled.compareAndSet(false, true)) {
-                        ProxyServiceState.addLog("Превышена квота — сброс сессии через 2 с")
+                        ProxyServiceState.addLog("Превышена квота - сброс сессии через 2 с")
                         handler.postDelayed({
                             sessionKillScheduled.set(false)
                             if (!userStopped.get()) {
@@ -305,13 +280,10 @@ class CoreProcessController(
             }
 
         } catch (e: CancellationException) {
-            // Остановка из UI отменяет корутину scope → CancellationException ("Job was
-            // cancelled"). Это штатный путь остановки. Пробрасываем дальше, чтобы не
-            // ломать семантику отмены; finally ниже обработает userStopped → стоп.
+            // Штатная остановка из UI (CancellationException).
             throw e
         } catch (e: Exception) {
-            // Любое исключение во время пользовательской остановки — следствие
-            // destroy()/закрытия пайпов, а не реальная ошибка. Не шумим в логах.
+            // Исключения при пользовательской остановке - следствие закрытия пайпов.
             if (userStopped.get()) {
                 startupFailed = false
             } else {
@@ -327,10 +299,9 @@ class CoreProcessController(
         } finally {
             ProxyServiceState.setCaptchaSession(null)
             notifier.cancelCaptcha()
-            // WG-туннель живёт только поверх работающего прокси — гасим вместе с ядром.
+            // WG-туннель живёт только поверх работающего прокси - гасим вместе с ядром.
             if (wireGuardStarted) wireGuard.stop()
-            // Процесс мёртв — активных соединений нет. При watchdog-рестарте publishStats
-            // на новом старте снова выставит правильный target.
+            // Сброс статистики соединений.
             ProxyServiceState.setConnectionStats(ConnectionStats.IDLE)
             process.set(null)
             when {
@@ -346,7 +317,7 @@ class CoreProcessController(
                 exitCode == 0 -> {
                     val uptime = System.currentTimeMillis() - startedAt
                     if (uptime < 5_000L) {
-                        ProxyServiceState.addLog("Быстрый выход (${uptime} мс) — проверьте ссылку и настройки")
+                        ProxyServiceState.addLog("Быстрый выход (${uptime} мс) - проверьте ссылку и настройки")
                     } else {
                         ProxyServiceState.addLog("Сессия завершена")
                     }
@@ -377,3 +348,4 @@ class CoreProcessController(
         }, delayMs)
     }
 }
+

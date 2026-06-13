@@ -25,7 +25,7 @@ import com.freeturn.app.ui.components.SettingsSwitchRow
 
 /**
  * DNS: режим резолвера, ручной список, свитч DNS оператора. Ручной список имеет приоритет
- * (см. ProxyService) — при действующем списке свитч оператора гасится, невалидные токены
+ * (см. ProxyService) - при действующем списке свитч оператора гасится, невалидные токены
  * подсвечиваются. UI и движок нормализуют ввод одним DnsList.
  */
 @Composable
@@ -80,9 +80,9 @@ internal fun DnsCard(
             )
         }
         SettingsRowDivider()
-        // DNS оператора — ниже ручного ввода, т.к. ручной список имеет приоритет
+        // DNS оператора - ниже ручного ввода, т.к. ручной список имеет приоритет
         // (см. ProxyService). При действующем ручном списке гасим свитч, чтобы
-        // не вводить в заблуждение «включён, но не действует».
+        // не вводить в заблуждение "включён, но не действует".
         SettingsSwitchRow(
             title = stringResource(R.string.use_carrier_dns),
             subtitle = if (dnsEffective.isEmpty()) stringResource(R.string.use_carrier_dns_desc)

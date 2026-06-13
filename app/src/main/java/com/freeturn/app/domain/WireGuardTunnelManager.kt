@@ -13,10 +13,8 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Поднимает WireGuard-туннель (GoBackend) поверх уже работающего локального прокси.
- * Endpoint в первом [Peer] подменяется на localPort прокси, так что трафик устройства
- * заворачивается в туннель и идёт через TURN-релей. Split-tunnel вставляет в
- * [Interface] Included/ExcludedApplications в зависимости от режима.
+ * Поднимает WireGuard-туннель поверх локального прокси.
+ * Заменяет Endpoint в первом [Peer] на localPort прокси.
  */
 class WireGuardTunnelManager(context: Context) {
 
@@ -76,8 +74,7 @@ private fun String.withLocalEndpoint(endpoint: String): String {
     if (endpoint.isBlank()) return this
     var inPeer = false
     var replaced = false
-    // Подменяем Endpoint только в ПЕРВОМ [Peer]: туннель идёт через один локальный
-    // прокси. Multi-peer конфиги сохраняют остальные пиры нетронутыми.
+    // Подменяем Endpoint только в первом [Peer].
     val lines = lineSequence().map { line ->
         val section = line.trim()
         if (section.startsWith("[") && section.endsWith("]")) {

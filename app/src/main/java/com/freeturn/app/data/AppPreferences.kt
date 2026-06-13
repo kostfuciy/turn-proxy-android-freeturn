@@ -32,7 +32,7 @@ data class SshConfig(
     val hostFingerprint: String = ""
 ) {
     companion object {
-        // Значения authType — контракт хранения (ServerJson).
+        // Значения authType - контракт хранения (ServerJson).
         const val AUTH_PASSWORD = "PASSWORD"
         const val AUTH_SSH_KEY = "SSH_KEY"
     }
@@ -62,7 +62,7 @@ object ObfProfile {
     /** Ключ -obf-key, который примет ядро (DecodeKey). Единая проверка для argv, UI и regen. */
     fun isValidKey(key: String): Boolean = key.matches(KEY_REGEX)
 
-    /** Новый случайный obf-ключ (32 байта → 64-hex). Ядру важен только формат. */
+    /** Новый случайный obf-ключ (32 байта -> 64-hex). Ядру важен только формат. */
     fun generateKey(): String =
         ByteArray(32).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
 }
@@ -71,18 +71,14 @@ object ObfProfile {
 object ClientId {
     private val ID_REGEX = Regex("^[0-9a-f]{32}$")
 
-    /** Формат, который генерирует и валидирует приложение (16 байт → 32-hex, как автоген ядра). */
+    /** Формат, который генерирует и валидирует приложение (16 байт -> 32-hex, как автоген ядра). */
     fun isValid(id: String): Boolean = id.matches(ID_REGEX)
 
     fun generate(): String =
         ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
 }
 
-/**
- * Транспорт «туннельного приложения» поверх локального прокси. Пока единственный —
- * WireGuard (GoBackend): поднимает VPN-туннель, чей Endpoint указывает на localPort
- * прокси, так что трафик устройства идёт через TURN-релей.
- */
+/** Транспорт VPN-туннеля (пока только WireGuard) поверх локального прокси. */
 object TunnelTransport {
     const val NONE = "none"
     const val WIREGUARD = "wireguard"
@@ -120,27 +116,20 @@ data class ClientConfig(
     /** Bonding TCP по smux-сессиям (-bond). Только при tcpForward. Client-only в новом ядре. */
     val bond: Boolean = false,
 
-    // Если true — добавляется флаг -debug для расширенного вывода в логах.
+    // Если true - добавляется флаг -debug для расширенного вывода в логах.
     val debugMode: Boolean = false,
-    // Если true — в argv передаётся -dns-servers с DNS активной сети (оператор связи).
+    // Если true - в argv передаётся -dns-servers с DNS активной сети (оператор связи).
     val useCarrierDns: Boolean = true,
-    // "auto" | "plain" | "doh" — соответствует флагу -dns-mode ядра.
+    // "auto" | "plain" | "doh" - соответствует флагу -dns-mode ядра.
     val dnsMode: String = DnsMode.AUTO,
-    /**
-     * Ручной список DNS-серверов (через запятую/пробел). Непустое значение имеет
-     * приоритет над [useCarrierDns] и передаётся в флаг -dns-servers ядра.
-     */
+    /** Ручной список DNS (-dns-servers), приоритет над [useCarrierDns]. */
     val customDns: String = "",
-    /**
-     * Если true — изменения tcpForward/obfEnabled на клиенте дёргают рестарт
-     * сервера (текущее поведение). Если false — флаги меняются только у клиента,
-     * серверный процесс не трогается. (bond — client-only, сервер не трогает.)
-     */
+    /** true - изменения tcpForward/obfEnabled перезапускают удаленный сервер. */
     val syncServerSwitches: Boolean = true,
     val magicSwitch: Boolean = false,
     /** Адрес для флага -turn ядра, если magicSwitch включён. Пусто = не передавать. */
     val magicTurn: String = "",
-    /** Транспорт туннеля: NONE (proxy) либо WIREGUARD (VPN). По умолчанию — без туннеля. */
+    /** Транспорт туннеля: NONE (proxy) либо WIREGUARD (VPN). По умолчанию - без туннеля. */
     val tunnelTransport: String = TunnelTransport.NONE,
     /** Конфиг WireGuard (.conf). Пусто = WG-туннель не поднимается. */
     val wireGuardConfig: String = "",
@@ -152,10 +141,7 @@ data class ClientConfig(
     val splitTunnelApps: String = "",
     /** Сбор логов ядра в UI. false = ProxyServiceState.addLog глотает строки. */
     val logsEnabled: Boolean = true,
-    /**
-     * -client-id для этого сервера: у импортированного доступа — cid из share-ссылки
-     * (он в allowlist владельца). Пусто = общий ID устройства (свои серверы).
-     */
+    /** -client-id для сервера (cid из share-ссылки). Пусто = общий ID устройства. */
     val clientId: String = ""
 ) {
     /** WG реально активен только если выбран WG-транспорт и задан непустой конфиг. */
@@ -180,17 +166,13 @@ class AppPreferences(context: Context) {
         val OWN_CLIENT_ID = stringPreferencesKey("own_client_id")
     }
 
-    /** DataStore-флоу: IOException (битый файл) → дефолты, остальное пробрасываем. */
+    /** DataStore-флоу: IOException (битый файл) -> дефолты, остальное пробрасываем. */
     private fun <T> prefFlow(transform: (Preferences) -> T): Flow<T> =
         context.dataStore.data
             .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
             .map(transform)
 
-    /**
-     * Снимок: список серверов + id активного — единственный источник истины
-     * конфигурации. Один Flow, чтобы UI получал консистентную пару (нет окна,
-     * в котором активный id указывает на удалённый).
-     */
+    /** Снимок серверов (источник истины конфигурации). Один Flow для консистентности. */
     val serversSnapshot: Flow<ServersSnapshot> = prefFlow { prefs ->
         ServersSnapshot(
             list = ServerJson.decodeList(prefs[SERVERS_JSON]),
@@ -201,7 +183,7 @@ class AppPreferences(context: Context) {
 
     // --- Конфиг активного сервера ---
     // Производные от serversSnapshot: их читает рантайм (ProxyService, оркестратор,
-    // SSH). Без активного сервера отдают дефолты — запускать в этом случае нечего.
+    // SSH). Без активного сервера отдают дефолты - запускать в этом случае нечего.
 
     private val activeServerFlow: Flow<Server?> =
         serversSnapshot.map { it.active }.distinctUntilChanged()
@@ -223,16 +205,16 @@ class AppPreferences(context: Context) {
 
     val dynamicThemeFlow: Flow<Boolean> = prefFlow { prefs -> prefs[DYNAMIC_THEME] ?: true }
 
-    /** «Режим отладки» — открывает отладочные секции (журнал, verbose, экран логов). */
+    /** "Режим отладки" - открывает отладочные секции (журнал, verbose, экран логов). */
     val nerdModeFlow: Flow<Boolean> = prefFlow { prefs -> prefs[NERD_MODE] ?: true }
 
     val tgSubscribeShownFlow: Flow<Boolean> = prefFlow { prefs -> prefs[TG_SUBSCRIBE_SHOWN] ?: false }
 
     // --- CRUD серверов ---
-    // Каждая операция — одна транзакция dataStore.edit: атомарный read-modify-write,
+    // Каждая операция - одна транзакция dataStore.edit: атомарный read-modify-write,
     // параллельные записи не теряются и не оставляют активный id без сервера.
 
-    /** Атомарно правит сервер по id. true — сервер найден и изменился. */
+    /** Атомарно правит сервер по id. true - сервер найден и изменился. */
     suspend fun updateServer(id: String, transform: (Server) -> Server): Boolean {
         var changed = false
         context.dataStore.edit { prefs ->
@@ -244,7 +226,7 @@ class AppPreferences(context: Context) {
         return changed
     }
 
-    /** Атомарно правит активный сервер. true — активный есть и изменился. */
+    /** Атомарно правит активный сервер. true - активный есть и изменился. */
     suspend fun updateActiveServer(transform: (Server) -> Server): Boolean {
         var changed = false
         context.dataStore.edit { prefs ->
@@ -257,10 +239,7 @@ class AppPreferences(context: Context) {
         return changed
     }
 
-    /**
-     * Добавляет сконфигурированный сервер (имя уникализируется) и возвращает его id.
-     * [activate] делает сервер активным сразу; первый сервер активируется всегда.
-     */
+    /** Добавляет сервер, уникализируя имя. [activate] делает его активным. */
     suspend fun addServer(server: Server, activate: Boolean = false): String {
         context.dataStore.edit { prefs ->
             val list = ServerJson.decodeList(prefs[SERVERS_JSON])
@@ -272,7 +251,7 @@ class AppPreferences(context: Context) {
         return server.id
     }
 
-    /** Переименовывает сервер. Пустое имя оставляет текущее; занятое получает « (2)». */
+    /** Переименовывает сервер. Пустое имя оставляет текущее; занятое получает " (2)". */
     suspend fun renameServer(id: String, name: String) {
         context.dataStore.edit { prefs ->
             val list = ServerJson.decodeList(prefs[SERVERS_JSON])
@@ -284,7 +263,7 @@ class AppPreferences(context: Context) {
         }
     }
 
-    /** Удаляет сервер; если он был активным — активным становится первый из оставшихся. */
+    /** Удаляет сервер; если он был активным - активным становится первый из оставшихся. */
     suspend fun deleteServer(id: String) {
         context.dataStore.edit { prefs ->
             val list = ServerJson.decodeList(prefs[SERVERS_JSON])
@@ -338,13 +317,9 @@ class AppPreferences(context: Context) {
         context.dataStore.edit { prefs -> prefs[TG_SUBSCRIBE_SHOWN] = true }
     }
 
-    /**
-     * Постоянный Client ID устройства (-client-id владельца). Генерируется один раз;
-     * start-команда сервера сажает его в allowlist и включает -clients-file.
-     */
+    /** Постоянный Client ID владельца. Генерируется один раз. */
     suspend fun ownClientId(): String {
-        // Read-first: write-транзакция на пути старта туннеля нужна один раз за
-        // жизнь установки — когда ключа ещё нет.
+        // Write-транзакция нужна один раз за жизнь установки.
         val cur = prefFlow { it[OWN_CLIENT_ID] }.first()
         if (cur != null && ClientId.isValid(cur)) return cur
         var id = ""

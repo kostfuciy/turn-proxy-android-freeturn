@@ -53,7 +53,7 @@ fun SettingsScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        // Корневой экран — внутри NavigationSuite, нижний бар сам держит инсет.
+        // Корневой экран - внутри NavigationSuite, нижний бар сам держит инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -70,9 +70,6 @@ fun SettingsScreen(
                     .padding(horizontal = Spacing.lg, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg)
             ) {
-                // Сегментированная группа (M3 expressive): пункты с микро-зазором,
-                // наружные углы большие. Новые пункты добавляются строкой в группу,
-                // при разрастании — разбиение на группы с SectionLabel.
                 SettingsGroup {
                     SettingsGroupItem(0, 4) {
                         SettingsEntryRow(
@@ -112,10 +109,7 @@ fun SettingsScreen(
     }
 }
 
-/**
- * «Продвинутые» — мастер-свитч «Режим отладки» ([SettingsViewModel.nerdMode]): включает
- * отладочную информацию в хабе сервера (журнал, подробные логи) и кнопку логов на главном экране.
- */
+/** "Продвинутые": переключатель "Режим отладки" ([SettingsViewModel.nerdMode]). */
 @Composable
 fun AdvancedScreen(
     settingsViewModel: SettingsViewModel,

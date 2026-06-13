@@ -46,7 +46,7 @@ import com.freeturn.app.viewmodel.SetupConfigDraft
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Шаг 2 мастера — опросник: режим (VPN/Proxy), бэкенд (WG-детект/порт), внешний порт
+ * Шаг 2 мастера - опросник: режим (VPN/Proxy), бэкенд (WG-детект/порт), внешний порт
  * turn-прокси, профиль обфускации и ссылка на звонок. Чистый компонент: state+колбэки.
  */
 @Composable
@@ -63,7 +63,7 @@ fun SetupConfigStep(
 ) {
     val context = LocalContext.current
     val reducedMotion = LocalReducedMotion.current
-    // Высота карточки режима меняется при переключениях — сглаживаем expressive-спеком.
+    // Высота карточки режима меняется при переключениях - сглаживаем expressive-спеком.
     val resizeSpec = MaterialTheme.motionScheme.defaultSpatialSpec<IntSize>()
     val cardModifier =
         if (reducedMotion) Modifier else Modifier.animateContentSize(resizeSpec)
@@ -154,7 +154,7 @@ fun SetupConfigStep(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else if (wgDetectedPort != null) {
-                    // WG уже стоит — используем как бэкенд, ничего не ставим.
+                    // WG уже стоит - используем как бэкенд, ничего не ставим.
                     WgStatusPanel(
                         found = true,
                         title = stringResource(R.string.setup_wg_found),
@@ -179,7 +179,7 @@ fun SetupConfigStep(
             }
             if (draft.wgCustomConf) {
                 SettingsRowDivider()
-                // Та же строка загрузки .conf, что в «Режиме подключения».
+                // Та же строка загрузки .conf, что в "Режиме подключения".
                 SettingsEntryRow(
                     iconRes = R.drawable.cloud_download_24px,
                     title = stringResource(R.string.load_wg_conf),
@@ -250,7 +250,7 @@ fun SetupConfigStep(
                 label = stringResource(R.string.listen_port),
                 supporting = stringResource(R.string.setup_listen_port_desc),
                 onRoll = onRollListenPort,
-                // Конфликт портов показываем сразу, формат — после тапа по submit.
+                // Конфликт портов показываем сразу, формат - после тапа по submit.
                 error = when {
                     portsClash -> stringResource(R.string.setup_ports_clash)
                     showErrors && !portOk(draft.listenPort) ->
@@ -315,7 +315,7 @@ fun SetupConfigStep(
 
 private fun portOk(p: String): Boolean = p.toIntOrNull()?.let { it in 1..65535 } == true
 
-/** Порт существующего бэкенда (127.0.0.1) — общее поле VPN-custom и proxy-режима. */
+/** Порт существующего бэкенда (127.0.0.1) - общее поле VPN-custom и proxy-режима. */
 @Composable
 private fun BackendPortField(
     draft: SetupConfigDraft,
@@ -342,7 +342,7 @@ private fun BackendPortField(
     )
 }
 
-/** Предупреждение: сервер с таким IP уже есть — мастер добавит вторую запись. */
+/** Предупреждение: сервер с таким IP уже есть - мастер добавит вторую запись. */
 @Composable
 private fun DuplicateHostPanel() {
     Surface(
@@ -370,7 +370,7 @@ private fun DuplicateHostPanel() {
 }
 
 /**
- * Итог WG-детекта — внутренняя тональная панель (surfaceContainerHighest поверх
+ * Итог WG-детекта - внутренняя тональная панель (surfaceContainerHighest поверх
  * карточки): статусная иконка + заголовок и пояснение.
  */
 @Composable
@@ -407,7 +407,7 @@ private fun WgStatusPanel(found: Boolean, title: String, desc: String) {
     }
 }
 
-/** Числовое поле порта с кнопкой «перегенерировать» (случайный из пула). */
+/** Числовое поле порта с кнопкой "перегенерировать" (случайный из пула). */
 @Composable
 private fun PortField(
     value: String,
@@ -444,7 +444,7 @@ private fun PortField(
     )
 }
 
-/** Подпись сегмента профиля: NONE — «Выкл», новые профили показываются именем. */
+/** Подпись сегмента профиля: NONE - "Выкл", новые профили показываются именем. */
 @Composable
 private fun obfProfileLabel(value: String): String = when (value) {
     ObfProfile.NONE -> stringResource(R.string.obf_none)

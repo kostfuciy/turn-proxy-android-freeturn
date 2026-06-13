@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * QR-код для [content] на белой карточке (чёрный на белом — максимум контраста
+ * QR-код для [content] на белой карточке (чёрный на белом - максимум контраста
  * для сканера независимо от темы). Матрица считается вне main-потока.
  */
 @Composable

@@ -13,19 +13,19 @@ import com.freeturn.app.domain.server.toFailure
 /**
  * SSH-операции мастера добавления self-hosted сервера. Собственный [SSHManager] и
  * [ServerControl]: мастер работает с черновиком конфига и не трогает живую сессию
- * активного сервера ([SshRepository]). Состояния не держит — каждая операция
+ * активного сервера ([SshRepository]). Состояния не держит - каждая операция
  * самостоятельный вызов, ошибки приходят типизированным [Result].
  */
 class ServerSetupRepository(context: Context, private val ssh: SSHManager) {
 
     private val control = ServerControl(context, ssh)
 
-    /** Отпечаток хоста, увиденный последней командой (TOFU) — сохраняется в сервер. */
+    /** Отпечаток хоста, увиденный последней командой (TOFU) - сохраняется в сервер. */
     val lastSeenFingerprint: String? get() = ssh.lastSeenFingerprint
 
     /** Снимок состояния хоста после probe. */
     data class ProbeResult(
-        /** Порт активного/сконфигурированного WireGuard; null — WG-бэкенда нет. */
+        /** Порт активного/сконфигурированного WireGuard; null - WG-бэкенда нет. */
         val wgPort: Int?
     )
 
@@ -33,11 +33,11 @@ class ServerSetupRepository(context: Context, private val ssh: SSHManager) {
     data class WgSetupResult(
         val port: Int,
         val clientConf: String?,
-        /** true — найден существующий wg0.conf, бутстрап не выполнялся. */
+        /** true - найден существующий wg0.conf, бутстрап не выполнялся. */
         val existed: Boolean
     )
 
-    /** Проверка SSH-доступа + probe. Ошибка SSH/скрипта — failure с текстом. */
+    /** Проверка SSH-доступа + probe. Ошибка SSH/скрипта - failure с текстом. */
     suspend fun probe(cfg: SshConfig): Result<ProbeResult> =
         when (val r = control.run(cfg, ServerCommand.Probe)) {
             is CmdResult.Err -> r.toFailure()

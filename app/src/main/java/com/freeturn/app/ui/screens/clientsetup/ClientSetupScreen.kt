@@ -68,8 +68,7 @@ fun ClientSetupScreen(
     // Источник данных: конкретный сервер по id либо активный.
     val server = serverId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
     val saved = server?.client ?: activeClient
-    // Активный сервер рулит живым рантаймом: SSH-сессия, рестарты, sync с сервером.
-    // Для неактивного редактируем только хранимые данные.
+    // Активный сервер рулит живым рантаймом, неактивный - только хранилищем.
     val isActive = serverId == null || serverId == snapshot.activeId
     val effSshIp = server?.ssh?.ip ?: sshConfig.ip
     val effProxyListen = server?.proxyListen ?: activeProxyListen
@@ -84,16 +83,14 @@ fun ClientSetupScreen(
     }
 
     val serverKnown = serverState as? com.freeturn.app.domain.ServerState.Known
-    // TCP-форвард: в sync-режиме у активного сервера берём реальное состояние из probe
-    // (если запущен), иначе — сохранённое значение клиента. Нужно лишь для показа Bond.
+    // TCP-форвард: реальное состояние из probe (если запущен) или сохранённое.
     val syncOn = saved.syncServerSwitches
     val effectiveTcpForward = if (isActive && syncOn && serverKnown?.running == true)
         serverKnown.tcpMode ?: saved.tcpForward else saved.tcpForward
 
     val context = LocalContext.current
 
-    // remember, НЕ rememberSaveable: rememberSaveable восстановил бы stale-поля из
-    // bundle при возврате на экран, и авто-сейв зеркалил бы их в чужой сервер.
+    // remember (не rememberSaveable), чтобы не восстанавливать stale-поля из bundle.
     var serverAddress by remember(saved.serverAddress) { mutableStateOf(saved.serverAddress) }
     var vkLink       by remember(saved.vkLink)         { mutableStateOf(saved.vkLink) }
     var threads      by remember(saved.threads)        { mutableFloatStateOf(saved.threads.toFloat()) }
@@ -110,9 +107,7 @@ fun ClientSetupScreen(
         }
     }
 
-    // Авто-сохранение с дебаунсом 600 мс для текстовых полей и ползунков.
-    // clientEdit пишет по id редактируемого сервера — смена активного за время
-    // дебаунса не затирает чужой конфиг.
+    // Авто-сохранение с дебаунсом 600 мс.
     LaunchedEffect(
         serverAddress, vkLink, threads, streamsPerCred, localPort, magicTurn, customDns
     ) {

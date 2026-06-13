@@ -16,7 +16,7 @@ import androidx.compose.ui.res.stringResource
 import com.freeturn.app.R
 import com.freeturn.app.ui.util.HapticUtil
 
-/** Диалог ручной настройки: только имя будущего сервера, остальное — потом в хабе. */
+/** Диалог ручной настройки: только имя будущего сервера, остальное - потом в хабе. */
 @Composable
 internal fun ManualNameDialog(
     onCreate: (String) -> Unit,

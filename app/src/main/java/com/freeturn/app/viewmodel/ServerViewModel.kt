@@ -27,7 +27,7 @@ class ServerViewModel(
     context: Context
 ) : ViewModel() {
 
-    // applicationContext: ViewModel переживает Activity — иначе утечка.
+    // applicationContext: ViewModel переживает Activity - иначе утечка.
     private val appContext = context.applicationContext
 
     val sshState: StateFlow<SshConnectionState> = sshRepository.sshState
@@ -42,9 +42,9 @@ class ServerViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SshConfig())
 
     /**
-     * Сводный статус АКТИВНОГО сервера для хаба — одна модель из 2 потоков. Server-контекст
+     * Сводный статус АКТИВНОГО сервера для хаба - одна модель из 2 потоков. Server-контекст
      * (активность сервера, наличие SSH) добавляет экран. Промежуточные фазы коллапсятся в
-     * [ServerHubStatus.Connecting]: от cold start до готовности — один переход в [ServerHubStatus.Online].
+     * [ServerHubStatus.Connecting]: от cold start до готовности - один переход в [ServerHubStatus.Online].
      */
     val hubStatus: StateFlow<ServerHubStatus> =
         combine(sshState, serverState) { ssh, server ->
@@ -61,7 +61,7 @@ class ServerViewModel(
                         version = server.version,
                         sshIp = ssh.ip
                     )
-                // Disconnected / Connecting / Connected+Checking → единый busy-визуал.
+                // Disconnected / Connecting / Connected+Checking -> единый busy-визуал.
                 else -> ServerHubStatus.Connecting
             }
         }.distinctUntilChanged()

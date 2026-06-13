@@ -4,13 +4,8 @@ import org.json.JSONObject
 import java.util.Base64
 
 /**
- * Share-ссылка `freeturn://base64url(JSON)` — зеркало wire-структуры Go-клиента
- * (internal/uri/uri.go, v=1) плюс наше расширение [wgConf] ("wg"): Go-парсер
- * незнакомые поля игнорирует, так что ссылка с WG-конфигом остаётся валидной
- * для десктоп-клиента. Encode повторяет Go json.Marshal — порядок полей wire,
- * omitempty (нулевые поля не пишутся, obf/key — только при реальном профиле).
- * JSON собирается вручную: org.json не гарантирует порядок ключей, а контракт
- * байт-в-байт зафиксирован golden-тестом.
+ * Share-ссылка `freeturn://base64url(JSON)`.
+ * JSON собирается вручную для сохранения порядка ключей (как в Go json.Marshal).
  */
 data class FreeturnLink(
     val provider: String,

@@ -78,8 +78,7 @@ fun ServerManagementScreen(
 ) {
     val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val server = serverId?.let { id -> snapshot.list.firstOrNull { it.id == id } }
-    // Живая SSH-сессия и состояние сервера принадлежат активному серверу. Управлять
-    // ядром можно только когда редактируемый сервер активен.
+    // Управление ядром доступно только для активного сервера.
     val isActive = serverId == null || serverId == snapshot.activeId
     val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()
     val serverState by serverViewModel.serverState.collectAsStateWithLifecycle()
@@ -90,8 +89,7 @@ fun ServerManagementScreen(
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val clientCfg by settingsViewModel.clientConfig.collectAsStateWithLifecycle()
     val serverOpts by serverViewModel.serverOpts.collectAsStateWithLifecycle()
-    // Источник серверных черновиков: активный сервер рулит живым конфигом,
-    // неактивный — снимком by-id (sync OFF, клиент-локально).
+    // Источник черновиков: живой конфиг (активный) или снимок (неактивный).
     val effClient = if (isActive) clientCfg else (server?.client ?: clientCfg)
     val effServer = if (isActive) serverOpts else (server?.opts ?: serverOpts)
 
@@ -105,14 +103,12 @@ fun ServerManagementScreen(
     var obfDraft by rememberSaveable(effServer.obfProfile) { mutableStateOf(effServer.obfProfile) }
     var keyDraft by rememberSaveable(effServer.obfKey) { mutableStateOf(effServer.obfKey) }
 
-    // SSH-сессию держит хаб (ServerDetailScreen): этот экран открыт только при активном
-    // подключении. Свой реконнект не нужен — не дублируем коннект на двух экранах.
+    // SSH-сессию держит хаб (свой реконнект не нужен).
 
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showServerMenu by rememberSaveable { mutableStateOf(false) }
-    // «Подключено» = ЖИВОЙ SSH ЭТОГО сервера. Живая сессия принадлежит активному серверу,
-    // поэтому для неактивного всегда false (иначе чужой коннект протёк бы сюда).
+    // "Подключено" - только для активного сервера.
     val isConnected = isActive && sshState is SshConnectionState.Connected
     val syncOn = effClient.syncServerSwitches
     val isWorking = serverState is ServerState.Working || serverState is ServerState.Checking
@@ -125,23 +121,20 @@ fun ServerManagementScreen(
         tcpDraft != effClient.tcpForward ||
         obfDraft != effServer.obfProfile ||
         keyDraft != effServer.obfKey
-    // Ключ валиден для применения: обфускация выкл, 64 hex, либо пусто — тогда apply
-    // оставит сохранённый ключ, а если его нет, сгенерирует новый локально.
+    // Ключ валиден: обфускация выкл, 64 hex, или пусто.
     val keyOkForApply = obfDraft == ObfProfile.NONE || keyDraft.isBlank() ||
         ObfProfile.isValidKey(keyDraft)
 
-    // Плавающий «Применить» виден только когда есть что применять: фиксирует весь черновик
-    // одним рестартом и уходит назад в хаб. Невалидный/занятый стейт — FAB просто прячется
-    // (поле obf-ключа само подсвечивает ошибку), действие появляется когда оно осмысленно.
+    // FAB "Применить": только при изменениях и валидном состоянии.
     val canApply = serverSettingsAvailable(isConnected, syncOn) &&
         configDirty && keyOkForApply && !isWorking
     fun applyConfig() {
         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
-        // Активный — apply в живой рантайм (один рестарт). Неактивный — пишем только снимок сервера.
+        // Активный - apply в живой рантайм (один рестарт). Неактивный - пишем только снимок сервера.
         if (isActive) {
             settingsViewModel.applyServerConfig(listenFull, proxyConnect, tcpDraft, obfDraft, keyDraft)
         } else {
-            // !isActive ⇒ serverId != null (см. isActive выше) — smart cast.
+            // !isActive ⇒ serverId != null (см. isActive выше) - smart cast.
             settingsViewModel.updateServerConfig(serverId, listenFull, proxyConnect, tcpDraft, obfDraft, keyDraft)
         }
         onBack()
@@ -162,7 +155,7 @@ fun ServerManagementScreen(
                 },
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    // Смена сервера спрятана в overflow ⋮ — заголовок остаётся чистым.
+                    // Смена сервера спрятана в overflow ⋮ - заголовок остаётся чистым.
                     if (isActive && onEditConnection != null) {
                         Box {
                             IconButton(onClick = { showServerMenu = true }) {
@@ -206,7 +199,7 @@ fun ServerManagementScreen(
                 )
             }
         },
-        // Экран внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        // Экран внутри NavigationSuite - нижний бар сам держит навбар-инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -224,9 +217,7 @@ fun ServerManagementScreen(
                     .padding(horizontal = Spacing.lg, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg)
             ) {
-                // Неактивный сервер + sync ON: серверные правки нужно пушить на сервер, а
-                // живая SSH-сессия принадлежит активному. Предлагаем сделать активным.
-                // При sync OFF настройки клиент-локальны — редактируем снимок сервера ниже.
+                // Неактивный + sync ON: предлагаем сделать сервер активным.
                 if (!isActive && syncOn) {
                     HeroCard(
                         iconRes = R.drawable.host_24px,
@@ -242,11 +233,7 @@ fun ServerManagementScreen(
                     return@Column
                 }
 
-                // SSH-сессия не активна (упала или ещё поднимается): конфиг и действия
-                // требуют живого подключения, без карточки экран остаётся пустым.
-                // Исключение — settings-флоу с sync OFF: серверные настройки клиент-локальны,
-                // показываем их ниже как обычно. 400мс дебаунс гасит мигание на холодном
-                // заходе (config грузится async); ошибка — устоявшееся состояние, сразу.
+                // SSH-сессия не активна: показываем ошибку (дебаунс 400мс на старте).
                 var lostVisible by remember { mutableStateOf(false) }
                 LaunchedEffect(isConnected) {
                     if (isConnected) lostVisible = false else { delay(400); lostVisible = true }
@@ -290,7 +277,7 @@ fun ServerManagementScreen(
                     }
                 }
 
-                // --- Серверный конфиг (listen/connect) — SSH-only, скрыт без подключения ---
+                // --- Серверный конфиг (listen/connect) - SSH-only, скрыт без подключения ---
                 if (isConnected) {
                     ServerConfigCard(
                         listenIp = proxyListenIp,
@@ -303,7 +290,7 @@ fun ServerManagementScreen(
                 }
 
                 // --- Синхронные настройки (apply-модель) ---
-                // Гейт общий со входом в экран (ServerDetailScreen) — serverSettingsAvailable.
+                // Гейт общий со входом в экран (ServerDetailScreen) - serverSettingsAvailable.
                 if (serverSettingsAvailable(isConnected, syncOn)) {
                     ServerSyncCard(
                         tcp = tcpDraft,

@@ -32,9 +32,9 @@ import com.freeturn.app.ui.util.hapticClickable
 
 /**
  * Строка-свитч в стиле [SettingsEntryRow]: тональная иконка (опц.), заголовок/подзаголовок,
- * trailing Switch с галкой в thumb (M3 expressive). Семантику несёт вся строка —
+ * trailing Switch с галкой в thumb (M3 expressive). Семантику несёт вся строка -
  * toggleable + [Role.Switch], TalkBack озвучивает как переключатель с состоянием.
- * Haptic встроен; [onCheckedChange] — чистое действие.
+ * Haptic встроен; [onCheckedChange] - чистое действие.
  */
 @Composable
 fun SettingsSwitchRow(
@@ -77,14 +77,14 @@ fun SettingsSwitchRow(
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = subtitleColor)
             }
         }
-        // null → display-only: клики и семантику несёт строка (один haptic, один фокус).
+        // null = display-only: клики и семантику несёт строка (один haptic, один фокус).
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 
 /**
  * Тональная иконка-кружок (Sunny) строки настроек. Один источник формы/размера.
- * Цвета параметризованы под особые строки (danger → errorContainer).
+ * Цвета параметризованы под особые строки (danger -> errorContainer).
  */
 @Composable
 fun SettingsRowIcon(
@@ -93,7 +93,7 @@ fun SettingsRowIcon(
     container: Color = MaterialTheme.colorScheme.secondaryContainer,
     tint: Color = MaterialTheme.colorScheme.onSecondaryContainer
 ) {
-    // Disabled: гасим контейнер и тинт вместе с заголовком — строка не выглядит наполовину живой.
+    // Disabled: гасим контейнер и тинт вместе с заголовком - строка не выглядит наполовину живой.
     val alpha = if (enabled) 1f else 0.38f
     Box(
         modifier = Modifier
@@ -112,8 +112,8 @@ fun SettingsRowIcon(
 
 /**
  * Строка-вход: тональная иконка, заголовок/подзаголовок, опциональный трейлинг.
- * По умолчанию трейлинг — шеврон (навигация). Передай null, чтобы убрать, или другой
- * ресурс (напр. галочку статуса). Haptic-клик встроен; [onClick] — чистое действие.
+ * По умолчанию трейлинг - шеврон (навигация). Передай null, чтобы убрать, или другой
+ * ресурс (напр. галочку статуса). Haptic-клик встроен; [onClick] - чистое действие.
  */
 @Composable
 fun SettingsEntryRow(

@@ -7,7 +7,7 @@ import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Установленное приложение — кандидат для split-tunnel. */
+/** Установленное приложение - кандидат для split-tunnel. */
 data class AppChoice(val label: String, val packageName: String)
 
 /** Строку package-имён (запятая/пробел/перенос/`;`) в множество, без пустых. */
@@ -16,7 +16,7 @@ fun String.toPackageSet(): Set<String> =
 
 /**
  * Установленные приложения с INTERNET-пермом, кроме самого FreeTurn.
- * PackageManager-вызовы тяжёлые (диск/IPC) — гоним на IO-потоке.
+ * PackageManager-вызовы тяжёлые (диск/IPC) - гоним на IO-потоке.
  */
 suspend fun Context.installedInternetApps(): List<AppChoice> = withContext(Dispatchers.IO) {
     val pm = packageManager

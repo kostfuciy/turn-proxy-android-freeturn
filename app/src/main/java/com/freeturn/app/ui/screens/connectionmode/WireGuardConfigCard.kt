@@ -42,7 +42,7 @@ internal fun WireGuardConfigCard(
         SettingsRowDivider()
         SettingsFieldSlot {
             // Та же ручная вставка .conf, что на шаге конфига мастера.
-            // Конфиг содержит приватный ключ — под privacyMode маскируем.
+            // Конфиг содержит приватный ключ - под privacyMode маскируем.
             OutlinedTextField(
                 value = wgConfig.redact(privacyMode),
                 onValueChange = { if (!privacyMode) onWgConfig(it) },

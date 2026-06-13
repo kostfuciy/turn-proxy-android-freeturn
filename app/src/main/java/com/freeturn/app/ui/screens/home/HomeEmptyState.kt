@@ -37,9 +37,8 @@ import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Главный экран без единого сервера: вместо кнопки запуска и листа серверов —
- * герой-приглашение с CTA «Добавить сервер». Запускать без сервера нечего,
- * поэтому тоггл и sheet не показываются вовсе.
+ * Главный экран, когда серверов нет: приглашение с кнопкой "Добавить сервер"
+ * вместо тоггла и листа (запускать без сервера нечего).
  */
 @Composable
 internal fun HomeEmptyState(
@@ -47,7 +46,7 @@ internal fun HomeEmptyState(
     modifier: Modifier = Modifier
 ) {
     val reducedMotion = LocalReducedMotion.current
-    // Медленное вращение фигуры (оборот в минуту). При reduced-motion — статично.
+    // Оборот в минуту. При reduced-motion статично.
     val rotation = if (reducedMotion) 0f else {
         val transition = rememberInfiniteTransition(label = "empty_breathe")
         val value by transition.animateFloat(

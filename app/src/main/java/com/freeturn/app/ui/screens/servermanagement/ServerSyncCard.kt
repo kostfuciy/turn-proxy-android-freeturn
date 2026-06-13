@@ -27,8 +27,8 @@ import com.freeturn.app.ui.util.redact
 
 /**
  * Синхронные серверные настройки (apply-модель): проброс UDP/TCP, профиль обфускации и
- * obf-ключ (черновик). Регенерация/копирование ключа — через колбэки; рестарт случается
- * по общей кнопке «Применить» на экране.
+ * obf-ключ (черновик). Регенерация/копирование ключа - через колбэки; рестарт случается
+ * по общей кнопке "Применить" на экране.
  */
 @Composable
 internal fun ServerSyncCard(
@@ -116,7 +116,7 @@ internal fun ServerSyncCard(
                 }
             }
         } else {
-            // obfProfile == NONE — подсказка выбрать профиль.
+            // obfProfile == NONE - подсказка выбрать профиль.
             SettingsFieldSlot {
                 Text(
                     stringResource(R.string.obf_select_profile_hint),

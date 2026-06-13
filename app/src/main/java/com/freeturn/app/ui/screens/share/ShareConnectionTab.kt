@@ -37,7 +37,7 @@ import com.freeturn.app.viewmodel.ShareViewModel
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Суб-вкладка «Соединение»: имя нового пользователя + сервер. Сам запуск выдачи —
+ * Суб-вкладка "Соединение": имя нового пользователя + сервер. Сам запуск выдачи -
  * на FAB экрана. Протокол (WireGuard/прокси) определяет сервер (share-info),
  * не локальный режим владельца.
  */
@@ -79,7 +79,7 @@ fun ShareConnectionTab(
             onSelect = onSelectServer
         )
 
-        // WG-сервер умеет оба типа доступа → выбор. Прокси-only сервер — просто статус.
+        // WG-сервер умеет оба типа доступа -> выбор. Прокси-only сервер - просто статус.
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             SectionLabel(
                 stringResource(
@@ -130,8 +130,7 @@ fun ShareConnectionTab(
     }
 }
 
-/** Статус выбранного сервера: протокол шаринга компактной строкой (Sunny-иконка +
- *  пояснение + obf-пилюля) либо загрузка/ошибка share-info. */
+/** Статус выбранного сервера: протокол шаринга либо загрузка/ошибка share-info. */
 @Composable
 private fun ShareProtocolCard(state: ShareUiState, onRetryInfo: () -> Unit) {
     val reducedMotion = LocalReducedMotion.current
@@ -142,8 +141,8 @@ private fun ShareProtocolCard(state: ShareUiState, onRetryInfo: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
-                // Shape-morph лоадер — тот же expressive-почерк, что у героя. Не дёргает
-                // enter-слайд: загрузка стартует уже после перехода (см. ShareScreen).
+                // Загрузка стартует уже после enter-перехода (см. ShareScreen),
+                // поэтому индикатор не дёргает slide-анимацию.
                 LoadingIndicator(modifier = Modifier.size(28.dp))
                 Text(
                     stringResource(R.string.share_info_loading),
@@ -169,7 +168,6 @@ private fun ShareProtocolCard(state: ShareUiState, onRetryInfo: () -> Unit) {
             }
 
             else -> state.shareInfo?.let {
-                // Смена WG/Прокси перетекает кроссфейдом — карточка «живёт» при выборе.
                 Crossfade(
                     targetState = state.useWg,
                     animationSpec = tween(if (reducedMotion) 0 else 250),
@@ -181,7 +179,6 @@ private fun ShareProtocolCard(state: ShareUiState, onRetryInfo: () -> Unit) {
                             .padding(Spacing.lg),
                         verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
-                        // Заголовок: тональная иконка (цвет зависит от режима) + название.
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.lg)
@@ -203,7 +200,6 @@ private fun ShareProtocolCard(state: ShareUiState, onRetryInfo: () -> Unit) {
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        // Пояснение — во всю ширину.
                         Text(
                             stringResource(
                                 if (wg) R.string.share_protocol_wg_desc

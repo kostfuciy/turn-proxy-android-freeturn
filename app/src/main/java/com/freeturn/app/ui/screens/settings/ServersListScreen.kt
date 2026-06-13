@@ -1,4 +1,4 @@
-@file:OptIn(
+﻿@file:OptIn(
     androidx.compose.material3.ExperimentalMaterial3Api::class,
     androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class
 )
@@ -38,7 +38,7 @@ import com.freeturn.app.ui.util.redact
 import com.freeturn.app.viewmodel.SettingsViewModel
 import com.freeturn.app.ui.theme.Spacing
 
-/** Список добавленных серверов. Клик по серверу → его детальный экран. */
+/** Список добавленных серверов. Клик по серверу - его детальный экран. */
 @Composable
 fun ServersListScreen(
     settingsViewModel: SettingsViewModel,
@@ -58,7 +58,7 @@ fun ServersListScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        // Экран всегда внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        // Экран всегда внутри NavigationSuite - нижний бар сам держит навбар-инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         if (snapshot.loaded && snapshot.list.isEmpty()) {
@@ -78,7 +78,7 @@ fun ServersListScreen(
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.lg, vertical = Spacing.md)
             ) {
-                // Активный сервер закрепляем сверху — быстрый доступ к нему.
+                // Активный сервер закрепляем сверху - быстрый доступ к нему.
                 val ordered = remember(snapshot.list, snapshot.activeId) {
                     snapshot.list.sortedByDescending { it.id == snapshot.activeId }
                 }
@@ -106,12 +106,12 @@ private fun ServerListRow(
     shape: Shape,
     onClick: () -> Unit
 ) {
-    // Подзаголовок: адрес сервера + метка «SSH», если сопряжение настроено. Сам SSH-ip
-    // не дублируем (он уже не несёт пользе в списке) — достаточно факта наличия.
+    // Подзаголовок: адрес сервера + метка "SSH", если сопряжение настроено. Сам SSH-ip
+    // в списке не показываем - достаточно факта наличия.
     val sub = listOfNotNull(
         server.client.serverAddress.takeIf { it.isNotBlank() }?.redact(privacyMode),
         stringResource(R.string.server_has_ssh).takeIf { server.ssh.ip.isNotBlank() }
-    ).joinToString(" · ").ifBlank { "—" }
+    ).joinToString(" · ").ifBlank { "-" }
     ServerRow(
         name = server.name,
         subtitle = sub,
@@ -121,3 +121,4 @@ private fun ServerListRow(
         trailingIconRes = R.drawable.chevron_right_24px
     )
 }
+

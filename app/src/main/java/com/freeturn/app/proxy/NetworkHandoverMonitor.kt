@@ -12,7 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Следит за сменой ФИЗИЧЕСКОЙ сети (Wi-Fi↔LTE и т.п.) и дёргает [onHandover].
+ * Следит за сменой ФИЗИЧЕСКОЙ сети (Wi-Fi <-> LTE и т.п.) и дёргает [onHandover].
  * VPN-интерфейсы отфильтрованы: иначе старт WireGuard выглядел бы как смена сети
  * и уводил прокси в бесконечный рестарт.
  */
@@ -22,7 +22,7 @@ class NetworkHandoverMonitor(
     private val onHandover: () -> Unit,
 ) {
     companion object {
-        // Игнорируем сетевые события первые секунды после регистрации — иначе
+        // Игнорируем сетевые события первые секунды после регистрации - иначе
         // initial onAvailable/onCapabilitiesChanged триггерят ложный рестарт.
         private const val WARMUP_MS = 3_000L
     }
@@ -44,7 +44,7 @@ class NetworkHandoverMonitor(
                 delay(2_000)
                 val oldKey = lastKey
                 val newKey = physicalNetworkKey(cm)
-                // Ключ тот же — ожидаемый no-op. onCapabilitiesChanged сыплет
+                // Ключ тот же - ожидаемый no-op. onCapabilitiesChanged сыплет
                 // десятки раз/мин (сигнал, link speed, валидация инета), не логаем.
                 if (oldKey == newKey) return@launch
                 lastKey = newKey
@@ -116,8 +116,8 @@ class NetworkHandoverMonitor(
 
     /**
      * Ключ ОДНОЙ приоритетной физсети (транспорт + iface). Берём приоритетную, а не
-     * весь allNetworks: при активном Wi-Fi cellular флапает в фоне, набор прыгал бы →
-     * ложная «смена сети». link-адреса не в ключе — ротация IPv6/DHCP идёт на той же
+     * весь allNetworks: при активном Wi-Fi cellular флапает в фоне, набор прыгал бы ->
+     * ложная "смена сети". link-адреса не в ключе - ротация IPv6/DHCP идёт на той же
      * сети; реальный хендовер меняет транспорт/iface.
      */
     private fun physicalNetworkKey(cm: ConnectivityManager): String? {
@@ -139,7 +139,7 @@ class NetworkHandoverMonitor(
                 else -> return@mapNotNull null
             }
             val iface = cm.getLinkProperties(network)?.interfaceName.orEmpty()
-            // tie-break по iface — детерминированный выбор при равном приоритете.
+            // tie-break по iface - детерминированный выбор при равном приоритете.
             Triple(priority, iface, "$transport|$iface")
         }.minWithOrNull(compareBy({ it.first }, { it.second }))?.third
     }

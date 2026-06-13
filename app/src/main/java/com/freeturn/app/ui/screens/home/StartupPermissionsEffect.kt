@@ -23,7 +23,7 @@ private const val PERMISSION_PROMPT_DELAY_MS = 400L
 
 /**
  * Стартовые разрешения главного экрана: уведомления (Android 13+), затем исключение
- * из оптимизации батареи. Цепочка: диалог нотификаций → его callback → диалог батареи,
+ * из оптимизации батареи. Цепочка: диалог нотификаций -> его callback -> диалог батареи,
  * чтобы системные окна не наслаивались.
  */
 @SuppressLint("BatteryLife")
@@ -33,12 +33,12 @@ internal fun RequestStartupPermissions() {
 
     val batteryOptLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { /* пользователь закрыл диалог батареи — результат нас не интересует */ }
+    ) { /* пользователь закрыл диалог батареи - результат нас не интересует */ }
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _ ->
-        // После диалога уведомлений — запрашиваем исключение из оптимизации батареи
+        // После диалога уведомлений - запрашиваем исключение из оптимизации батареи
         requestBatteryExemption(context, batteryOptLauncher)
     }
 
@@ -52,7 +52,7 @@ internal fun RequestStartupPermissions() {
             // Запрашиваем нотификации; батарею запросим в callback выше
             notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            // Нотификации уже есть — сразу проверяем батарею
+            // Нотификации уже есть - сразу проверяем батарею
             requestBatteryExemption(context, batteryOptLauncher)
         }
     }

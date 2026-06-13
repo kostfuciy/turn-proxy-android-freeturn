@@ -69,7 +69,7 @@ fun SshSetupScreen(
     onBack: () -> Unit
 ) {
     // Экран не сервер-скоупный (правит активный SSH). Все серверы удалены, пока экран
-    // висел в стеке вкладки — выходим назад: иначе форма пишет в осиротевший конфиг.
+    // висел в стеке вкладки - выходим назад: иначе форма пишет в осиротевший конфиг.
     val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     if (snapshot.loaded && snapshot.list.isEmpty()) {
         LaunchedEffect(Unit) { onBack() }
@@ -87,8 +87,8 @@ fun SshSetupScreen(
     var sshKey by rememberSaveable(savedConfig.sshKey) { mutableStateOf(savedConfig.sshKey) }
 
     // Переходим только если подключение было установлено ПОСЛЕ открытия экрана.
-    // Если sshState уже Connected при входе (пользователь хочет изменить настройки) —
-    // не перенаправляем автоматически, ждём явного нажатия «Подключиться».
+    // Если sshState уже Connected при входе (пользователь хочет изменить настройки) -
+    // не перенаправляем автоматически, ждём явного нажатия "Подключиться".
     var sawNonConnected by remember { mutableStateOf(sshState !is SshConnectionState.Connected) }
     LaunchedEffect(sshState) {
         if (sshState !is SshConnectionState.Connected) sawNonConnected = true
@@ -100,7 +100,7 @@ fun SshSetupScreen(
     val reducedMotion = LocalReducedMotion.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    // Подсветка незаполненных полей — включается тапом по FAB на невалидной форме.
+    // Подсветка незаполненных полей - включается тапом по FAB на невалидной форме.
     var highlightErrors by rememberSaveable { mutableStateOf(false) }
     val formValid = ip.isNotBlank() &&
         port.toIntOrNull()?.let { it in 1..65535 } == true &&
@@ -185,7 +185,7 @@ fun SshSetupScreen(
                         sshKey = sshKey, onSshKeyChange = { sshKey = it },
                         showErrors = highlightErrors
                     )
-                    // Ошибка подключения — тональная карточка в тон ошибки.
+                    // Ошибка подключения - тональная карточка в тон ошибки.
                     (sshState as? SshConnectionState.Error)?.let { InlineErrorCard(it.message) }
                 } else {
                     ConnectionProgressCard(step = stringResource(R.string.ssh_connecting))

@@ -1,4 +1,4 @@
-package com.freeturn.app.domain
+﻿package com.freeturn.app.domain
 
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.HostKey
@@ -21,21 +21,14 @@ class SSHManager {
 
     /**
      * Выполняет команду по SSH и возвращает вывод.
-     *
-     * @param knownFingerprint SHA-256 отпечаток хоста из сохранённых настроек.
-     *   - null  → первое подключение, принимаем любой ключ и сохраняем отпечаток
-     *   - строка → проверяем совпадение; при расхождении возвращаем ошибку MITM
-     * @param sshKey PEM-строка приватного ключа. Если не пустая — используется key-аутентификация
-     *   вместо пароля. Поддерживаются RSA, EC, Ed25519 (JSch).
+     * @param knownFingerprint SHA-256 отпечаток (null для первого подключения, строка для TOFU/MITM проверки).
+     * @param sshKey PEM-строка приватного ключа (RSA/EC/Ed25519).
      */
     suspend fun executeSilentCommand(
         ip: String, port: Int, user: String, pass: String, command: String,
         knownFingerprint: String? = null,
         sshKey: String = "",
-        /**
-         * Таймаут на чтение из канала (мс). Защита от зависания, когда
-         * соединение установлено, но удалённый процесс молчит.
-         */
+        /** Таймаут I/O из канала (мс). */
         execTimeoutMs: Int = 30_000
     ): String = withContext(Dispatchers.IO) {
         val tofu = TofuHostKeyRepository(knownFingerprint)
@@ -50,26 +43,22 @@ class SSHManager {
             tempSession.hostKeyRepository = tofu
 
             val config = Properties()
-            // StrictHostKeyChecking = "no" нужен чтобы JSch не требовал known_hosts файл;
-            // реальную проверку выполняет TofuHostKeyRepository
+            // StrictHostKeyChecking="no" отключает known_hosts. Проверка идёт через TofuHostKeyRepository.
             config["StrictHostKeyChecking"] = "no"
             tempSession.setConfig(config)
             tempSession.connect(5000)
-            // Socket-таймаут на I/O: если за execTimeoutMs не пришло ни байта,
-            // read() бросит SocketTimeoutException вместо вечного ожидания.
+            // SocketTimeoutException вместо вечного ожидания read().
             tempSession.timeout = execTimeoutMs
 
             lastSeenFingerprint = tofu.capturedFingerprint
 
             val channel = tempSession.openChannel("exec") as ChannelExec
 
-            // "exec 2>&1" merges stderr into stdout at shell level — no separate thread needed.
-            // Also strip \r: Kotlin CRLF source files embed carriage returns into string literals
-            // which corrupts variable values on the remote Linux shell.
+            // "exec 2>&1" сливает stderr в stdout. Вырезаем \r (CRLF -> LF).
             val sanitized = command.replace("\r\n", "\n").replace("\r", "\n")
             channel.setCommand("exec 2>&1\n$sanitized")
 
-            // Получаем stdout-поток ДО connect() — после уже нельзя
+            // Получаем stdout-поток ДО connect() - после уже нельзя.
             val inStream = channel.inputStream
             channel.connect(execTimeoutMs)
 
@@ -84,12 +73,12 @@ class SSHManager {
             channel.disconnect()
             output.trim()
         } catch (e: Exception) {
-            // Если отпечаток изменился — конкретное сообщение об угрозе
+            // Если отпечаток изменился, показываем предупреждение MITM.
             val isMitm = tofu.capturedFingerprint != null
                 && knownFingerprint != null
                 && tofu.capturedFingerprint != knownFingerprint
             if (isMitm) {
-                "ERROR: Отпечаток сервера изменился — возможна MITM-атака\n" +
+                "ERROR: Отпечаток сервера изменился - возможна MITM-атака\n" +
                 "Ожидался: $knownFingerprint\n" +
                 "Получен:  ${tofu.capturedFingerprint}"
             } else {
@@ -101,19 +90,15 @@ class SSHManager {
     }
 
     /**
-     * Выполняет команду по SSH, передавая [stdin] через стандартный ввод процесса.
-     * Используется для стрима asset-скрипта (`bash -s -- args`) без записи на сервер.
-     * Возвращает stdout+stderr команды (CRLF→LF).
+     * Выполняет команду по SSH, передавая [stdin] через ввод процесса (стриминг скрипта).
+     * Возвращает stdout+stderr.
      */
     suspend fun executeWithStdin(
         ip: String, port: Int, user: String, pass: String,
         command: String, stdin: String,
         knownFingerprint: String? = null,
         sshKey: String = "",
-        /**
-         * Таймаут на чтение из канала (мс). Дефолт > чем у обычного exec,
-         * потому что серверный install качает бинарь с GitHub.
-         */
+        /** Таймаут чтения (мс). Увеличен для загрузок (GitHub). */
         execTimeoutMs: Int = 180_000
     ): String = withContext(Dispatchers.IO) {
         val tofu = TofuHostKeyRepository(knownFingerprint)
@@ -135,8 +120,7 @@ class SSHManager {
             val channel = tempSession.openChannel("exec") as ChannelExec
             val sanitized = command.replace("\r\n", "\n").replace("\r", "\n")
             channel.setCommand("exec 2>&1\n$sanitized")
-            // Нормализуем переносы строк stdin: Kotlin source может содержать
-            // CRLF, что ломает bash heredoc/parser.
+            // Нормализация переносов CRLF -> LF для bash.
             val stdinLf = stdin.replace("\r\n", "\n").replace("\r", "\n")
             channel.inputStream = ByteArrayInputStream(stdinLf.toByteArray(Charsets.UTF_8))
 
@@ -158,7 +142,7 @@ class SSHManager {
                 && knownFingerprint != null
                 && tofu.capturedFingerprint != knownFingerprint
             if (isMitm) {
-                "ERROR: Отпечаток сервера изменился — возможна MITM-атака\n" +
+                "ERROR: Отпечаток сервера изменился - возможна MITM-атака\n" +
                 "Ожидался: $knownFingerprint\n" +
                 "Получен:  ${tofu.capturedFingerprint}"
             } else {
@@ -170,13 +154,9 @@ class SSHManager {
     }
 
     /**
-     * Загружает приватный ключ в JSch для key-аутентификации.
-     *
-     * OpenSSH ed25519/RSA-ключи требуют LF и финального перевода строки — при вставке
-     * через Android-textfield/Windows может прилететь CRLF, и парсер OPENSSH PRIVATE KEY
-     * роняет ключ. Нормализуем перед addIdentity. Парольная фраза ключа (если он
-     * зашифрован) приходит в [pass]. Ed25519 требует Bouncy Castle на classpath
-     * (на Android нет Java 15 EdDSA) — см. libs.versions.toml.
+     * Загружает приватный ключ в JSch.
+     * Нормализуем CRLF -> LF (OpenSSH требует LF + пустую строку в конце).
+     * [pass] - парольная фраза ключа.
      */
     private fun addKeyIdentity(jsch: JSch, sshKey: String, pass: String) {
         val keyBytes = normalizePrivateKey(sshKey)
@@ -192,12 +172,8 @@ class SSHManager {
 }
 
 /**
- * TOFU (Trust On First Use) репозиторий ключей хостов для JSch.
- *
- * Логика:
- * - knownFingerprint == null → первое подключение, принимаем любой ключ
- * - knownFingerprint совпадает → ОК
- * - knownFingerprint не совпадает → CHANGED, JSch бросает JSchException
+ * TOFU (Trust On First Use) репозиторий хостов.
+ * null = первое подключение, несовпадение = CHANGED (JSchException).
  */
 private class TofuHostKeyRepository(
     private val knownFingerprint: String?
@@ -227,3 +203,4 @@ private class TofuHostKeyRepository(
         return "SHA256:" + Base64.getEncoder().withoutPadding().encodeToString(hash)
     }
 }
+

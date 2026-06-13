@@ -9,9 +9,7 @@ import com.freeturn.app.di.appModule
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
-        // ed25519/curve25519 обеспечивает Bouncy Castle на classpath — mwiede/jsch 2.x
-        // подхватывает его сам, регистрация Security-провайдера не нужна (старый
-        // net.i2p EdDSASecurityProvider jsch 2.x игнорировал, потому ed25519 не работал).
+        // ed25519/curve25519 работает через Bouncy Castle в classpath. jsch 2.x подхватывает его сам.
         startKoin {
             androidLogger()
             androidContext(this@App)

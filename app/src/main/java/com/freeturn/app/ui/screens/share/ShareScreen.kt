@@ -62,16 +62,11 @@ import com.freeturn.app.ui.theme.Spacing
 private const val TAB_CONNECTION = 0
 private const val TAB_USERS = 1
 
-/**
- * Вкладка «Поделиться»: выдача VPN-доступа по ссылке без передачи управления
- * сервером. Суб-вкладки — «Соединение» (новый пользователь) и «Пользователи»
- * (выданные доступы).
- */
+/** Вкладка "Поделиться": выдача доступа ("Соединение") и управление ("Пользователи"). */
 @Composable
 fun ShareScreen(
     onAddServer: () -> Unit,
-    // true, когда enter-переход завершён (см. AppNavigation). До этого начальную
-    // загрузку не стартуем: morph-индикатор + slide одновременно роняют кадры.
+    // true, когда enter-переход завершён (загрузка не тормозит анимацию).
     screenSettled: Boolean,
     viewModel: ShareViewModel = koinViewModel()
 ) {
@@ -81,14 +76,13 @@ fun ShareScreen(
     val reducedMotion = LocalReducedMotion.current
     var tab by rememberSaveable { mutableIntStateOf(TAB_CONNECTION) }
 
-    // Тихий рефреш серверной правды (без индикатора) — сразу. Начальную загрузку
-    // с морф-индикатором держим до конца enter-перехода.
+    // Тихий рефреш (сразу), индикатор - после enter-перехода.
     LaunchedEffect(Unit) { viewModel.revalidateInfo() }
     LaunchedEffect(screenSettled, state.selectedServerId) {
         if (screenSettled) viewModel.ensureInfoLoaded()
     }
 
-    // Список пользователей тянем лениво — только когда открыта их вкладка.
+    // Список пользователей тянем лениво - только когда открыта их вкладка.
     LaunchedEffect(tab, state.selectedServerId) {
         if (tab == TAB_USERS) viewModel.refreshPeers()
     }
@@ -102,9 +96,7 @@ fun ShareScreen(
             )
         },
         floatingActionButton = {
-            // FAB выдачи — на вкладке «Соединение», только когда готово к созданию
-            // (имя задано, сервер выбран, share-info загружен). Во время создания
-            // держим видимым ради прогресса (canCreate на это время false).
+            // FAB "Создать" (только на вкладке "Соединение", если готово или в процессе).
             AnimatedVisibility(
                 visible = tab == TAB_CONNECTION && (state.canCreate || state.creating),
                 enter = if (reducedMotion) EnterTransition.None else scaleIn() + fadeIn(),
@@ -126,7 +118,7 @@ fun ShareScreen(
                 )
             }
         },
-        // Экран всегда внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        // Экран всегда внутри NavigationSuite - нижний бар сам держит навбар-инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         if (state.sshServers.isEmpty()) {
@@ -155,7 +147,6 @@ fun ShareScreen(
                     .widthIn(max = SettingsContentMaxWidth)
                     .fillMaxWidth()
             ) {
-                // Сегменты вместо TabRow — единый язык с Settings/Setup-флоу.
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -180,7 +171,7 @@ fun ShareScreen(
                 }
                 AnimatedContent(
                     targetState = tab,
-                    // Shared-axis X: вперёд (к «Пользователям») — въезд справа, назад — слева.
+                    // Shared-axis X: вперёд (к "Пользователям") - въезд справа, назад - слева.
                     transitionSpec = {
                         val forward = targetState > initialState
                         val w = { full: Int -> if (forward) full / 5 else -full / 5 }

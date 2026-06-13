@@ -80,7 +80,7 @@ fun CaptchaWebViewDialog(
                 )
             }
         ) { padding ->
-            // URL приходит из лога ядра — грузим только http(s). javascript:/file:/
+            // URL приходит из лога ядра - грузим только http(s). javascript:/file:/
             // data: в WebView с включённым JS исполнились бы в его контексте.
             val isValidUrl = remember(captchaUrl) {
                 captchaUrl.toUri().scheme?.lowercase() in ALLOWED_SCHEMES
@@ -110,7 +110,7 @@ fun CaptchaWebViewDialog(
                                     setSupportZoom(true)
                                     builtInZoomControls = true
                                     displayZoomControls = false
-                                    // Капча отдаётся ядром по http://localhost — COMPATIBILITY
+                                    // Капча отдаётся ядром по http://localhost - COMPATIBILITY
                                     // блокирует active mixed content, но не ломает поток.
                                     // ALWAYS_ALLOW (было) открывал MITM.
                                     mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
@@ -125,7 +125,7 @@ fun CaptchaWebViewDialog(
 
                                 webViewClient = object : WebViewClient() {
                                     // Блокируем навигацию вне http(s): intent://, market://,
-                                    // tel:, javascript: и пр. — частые векторы редиректа.
+                                    // tel:, javascript: и пр. - частые векторы редиректа.
                                     override fun shouldOverrideUrlLoading(
                                         view: WebView?,
                                         request: WebResourceRequest?

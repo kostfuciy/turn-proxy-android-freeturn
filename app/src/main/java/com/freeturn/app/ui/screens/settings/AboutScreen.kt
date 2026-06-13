@@ -49,7 +49,7 @@ import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.theme.Spacing
 
-/** «О проекте»: hero с лого в expressive-форме, версия, описание и ссылки. */
+/** "О проекте": hero с лого, версия, описание и ссылки. */
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -126,7 +126,7 @@ fun AboutScreen(onBack: () -> Unit) {
     }
 }
 
-/** Hero «О проекте»: ромб-лого в 9-гранной cookie (как пустой список серверов), имя, версия-пилюля, описание. */
+/** Hero "О проекте": лого, имя, версия-пилюля, описание. */
 @Composable
 private fun AboutHero(appVersion: String) {
     Column(

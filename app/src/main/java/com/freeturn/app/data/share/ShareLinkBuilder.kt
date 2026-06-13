@@ -4,10 +4,8 @@ import com.freeturn.app.data.ObfProfile
 import com.freeturn.app.data.Server
 
 /**
- * Собирает freeturn://-ссылку для нового пользователя. mode/obf берутся из
- * [ShareInfo] (фактический run.args сервера); локальные Server.opts — фоллбэк
- * для серверов, ни разу не запускавшихся из приложения. vkLink в ссылку не
- * входит: звонок уникален на каждого клиента, получатель вводит свой.
+ * Собирает freeturn://-ссылку для пользователя.
+ * vkLink в ссылку не входит, получатель вводит свой.
  */
 object ShareLinkBuilder {
 
@@ -35,7 +33,7 @@ object ShareLinkBuilder {
         ).encode()
     }
 
-    /** Срезает комментарии и пустые строки WG-conf — короче ссылка, плотнее QR. */
+    /** Срезает комментарии и пустые строки WG-conf - короче ссылка, плотнее QR. */
     internal fun normalizeConf(conf: String): String =
         conf.lineSequence()
             .map { it.trim() }

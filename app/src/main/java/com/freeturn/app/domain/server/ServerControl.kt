@@ -6,12 +6,7 @@ import com.freeturn.app.data.SshConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Запускает [ServerCommand] на удалённом хосте, стримя `free-turn-control.sh`
- * (asset) через SSH stdin. Скрипт грузится один раз, дальше он будет
- * передаваться в bash при каждом вызове — это даёт простоту (нет sync-проблемы
- * с серверной копией) и идемпотентность (скрипт сам решает install/cached).
- */
+/** Запускает [ServerCommand] на удалённом хосте, стримя скрипт через SSH stdin. */
 class ServerControl(
     context: Context,
     private val ssh: SSHManager
@@ -23,7 +18,7 @@ class ServerControl(
             .use { it.readText() }
     }
 
-    /** Сырая команда, которую запускаем на сервере (без скрипта — он идёт через stdin). */
+    /** Сырая команда для запуска (без скрипта). */
     private fun remoteCmd(argv: List<String>): String {
         val quoted = argv.joinToString(" ") { shellQuote(it) }
         return "bash -s -- $quoted"
@@ -31,8 +26,7 @@ class ServerControl(
 
     suspend fun run(cfg: SshConfig, cmd: ServerCommand): CmdResult = withContext(Dispatchers.IO) {
         if (cfg.ip.isBlank()) return@withContext CmdResult.Err("no SSH config", emptyList())
-        // Сборка команды + ленивое чтение 52KB-скрипта (assets) и парсинг вывода —
-        // всё на IO: первый SSH-вызов не блокирует главный поток (фриз при открытии).
+        // Сборка команды и чтение скрипта на IO-потоке.
         val output = ssh.executeWithStdin(
             ip = cfg.ip,
             port = cfg.port,
@@ -48,11 +42,11 @@ class ServerControl(
 
     /**
      * Заворачивает значение в одинарные кавычки для bash. Любая `'` внутри
-     * заменяется на `'\''` — стандартный приём.
+     * заменяется на `'\''` - стандартный приём.
      */
     private fun shellQuote(s: String): String {
         if (s.isEmpty()) return "''"
-        // Если строка состоит только из безопасных символов — обходимся без кавычек.
+        // Если строка состоит только из безопасных символов - обходимся без кавычек.
         if (s.matches(Regex("^[A-Za-z0-9._:=\\-/]+$"))) return s
         return "'" + s.replace("'", "'\\''") + "'"
     }

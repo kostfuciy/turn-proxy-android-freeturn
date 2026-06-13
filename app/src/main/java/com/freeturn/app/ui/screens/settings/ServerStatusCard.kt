@@ -52,11 +52,9 @@ import com.freeturn.app.viewmodel.ServerHubStatus
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Карточка статуса сервера в хабе. Один источник истины — [ServerHubStatus] (собран в VM).
- * Дизайн: hero-строка (живой индикатор + заголовок фазы) несёт статус ОДИН раз — без
- * дублирующих тегов (детали ядра живут в «Отладочной информации»). Тело меняется одним
- * [AnimatedContent] (size-spring, M3 expressive); фазы холодного захода
- * (disconnected/connecting/checking) свёрнуты в Connecting — один переход в Online.
+ * Карточка статуса сервера в хабе. Один источник истины - [ServerHubStatus] (собран в VM).
+ * Тело меняется одним [AnimatedContent]; фазы холодного захода
+ * (disconnected/connecting/checking) свёрнуты в Connecting - один переход в Online.
  */
 @Composable
 internal fun ServerStatusCard(
@@ -66,9 +64,9 @@ internal fun ServerStatusCard(
     onRetry: () -> Unit
 ) {
     val reducedMotion = LocalReducedMotion.current
-    // Sync OFF — live-фазы ядра (online/connecting/working/failed) нерелевантны: клиент с
+    // Sync OFF - live-фазы ядра (online/connecting/working/failed) нерелевантны: клиент с
     // сервером не общается. Схлопываем их в нейтральную заглушку. Actionable-состояния
-    // (Offline/NotPaired) остаются — это setup, а не live-статус.
+    // (Offline/NotPaired) остаются - это setup, а не live-статус.
     val effective = if (!syncOn && status.isLivePhase()) ServerHubStatus.SyncOff else status
     Surface(
         shape = MaterialTheme.shapes.large,
@@ -77,7 +75,7 @@ internal fun ServerStatusCard(
     ) {
         AnimatedContent(
             targetState = effective,
-            // Переход только при смене ФАЗЫ; правки данных внутри Online обновляют тело на месте.
+            // Переход только при смене фазы; правки данных внутри Online обновляют тело на месте.
             contentKey = { it.phaseKey() },
             transitionSpec = {
                 if (reducedMotion) {
@@ -121,7 +119,7 @@ internal fun ServerStatusCard(
     }
 }
 
-/** Стабильный ключ фазы — AnimatedContent анимирует только при его смене. */
+/** Стабильный ключ фазы - AnimatedContent анимирует только при его смене. */
 private fun ServerHubStatus.phaseKey(): Int = when (this) {
     ServerHubStatus.Offline -> 0
     ServerHubStatus.NotPaired -> 1
@@ -132,7 +130,7 @@ private fun ServerHubStatus.phaseKey(): Int = when (this) {
     ServerHubStatus.SyncOff -> 6
 }
 
-/** Live-фазы зависят от живого SSH/ядра — при sync OFF схлопываются в [ServerHubStatus.SyncOff]. */
+/** Live-фазы зависят от живого SSH/ядра - при sync OFF схлопываются в [ServerHubStatus.SyncOff]. */
 private fun ServerHubStatus.isLivePhase(): Boolean = when (this) {
     is ServerHubStatus.Online, ServerHubStatus.Connecting,
     is ServerHubStatus.Working, ServerHubStatus.Failed -> true
@@ -140,9 +138,8 @@ private fun ServerHubStatus.isLivePhase(): Boolean = when (this) {
 }
 
 /**
- * Hero-строка статуса: живой индикатор-«ореол» слева + заголовок фазы и опц. подзаголовок.
- * Статус озвучивается один раз тут (никакого дублирующего чипа). [liveRegion] — TalkBack
- * объявляет смену фазы. Заголовок onSurface (читаемость), цвет несёт индикатор.
+ * Hero-строка статуса: индикатор слева + заголовок фазы и опц. подзаголовок.
+ * [liveRegion] - TalkBack объявляет смену фазы.
  */
 @Composable
 private fun StatusHero(
@@ -176,7 +173,7 @@ private fun StatusHero(
     }
 }
 
-/** Цветная точка-«ореол» статуса. В busy-фазах ореол мягко пульсирует (reduced-motion → статично). */
+/** Цветная точка-индикатор статуса. В busy-фазах пульсирует (reduced-motion -> статично). */
 @Composable
 private fun StatusIndicator(color: Color, pulsing: Boolean) {
     val reducedMotion = LocalReducedMotion.current
@@ -201,7 +198,7 @@ private fun StatusIndicator(color: Color, pulsing: Boolean) {
     }
 }
 
-/** Busy-фаза (подключение/серверное действие): hero с пульсом + тонкий wavy-индикатор. */
+/** Busy-фаза (подключение/серверное действие): hero с пульсом + wavy-индикатор. */
 @Composable
 private fun BusyContent(title: String) {
     StatusHero(
@@ -213,9 +210,9 @@ private fun BusyContent(title: String) {
 }
 
 /**
- * Живое ядро: hero несёт главный статус ОДИН раз (работает/остановлен/не установлено).
- * Детальные теги (SSH, режим, обфускация, версия) тут не дублируем — они живут в
- * «Отладочной информации» (NerdScreen → «Состояние ядра»).
+ * Живое ядро: hero несёт главный статус (работает/остановлен/не установлено).
+ * Детальные теги (SSH, режим, обфускация, версия) тут не дублируем - они в
+ * "Отладочной информации" (NerdScreen).
  */
 @Composable
 private fun OnlineContent(status: ServerHubStatus.Online) {
@@ -229,8 +226,8 @@ private fun OnlineContent(status: ServerHubStatus.Online) {
 }
 
 /**
- * Ошибка подключения/команды — hero + «Переподключиться». Конкретную причину НЕ показываем:
- * это внутренняя java/SSH-ошибка, а не серверная — юзеру бесполезна.
+ * Ошибка подключения/команды - hero + "Переподключиться". Конкретную причину не показываем:
+ * это внутренняя java/SSH-ошибка, а не серверная - юзеру бесполезна.
  */
 @Composable
 private fun FailedContent(onRetry: () -> Unit) {
@@ -243,7 +240,7 @@ private fun FailedContent(onRetry: () -> Unit) {
     }
 }
 
-/** Неактивный сервер — hero + «Сделать активным». Адреса не дублируем: они в шапке хаба. */
+/** Неактивный сервер - hero + "Сделать активным". Адреса не дублируем: они в шапке хаба. */
 @Composable
 private fun OfflineContent(onActivate: () -> Unit) {
     StatusHero(
@@ -257,9 +254,9 @@ private fun OfflineContent(onActivate: () -> Unit) {
 }
 
 /**
- * SSH не настроен — только hero-статус. Штатное состояние ручной настройки
- * (вкладка «+» → «Ручная настройка»): клиентские настройки доступны, серверное
- * управление — нет. SSH задаётся только мастером, дозавести его нельзя.
+ * SSH не настроен - только hero-статус. Штатное состояние ручной настройки
+ * (вкладка "+" -> "Ручная настройка"): клиентские настройки доступны, серверное
+ * управление - нет. SSH задаётся только мастером, дозавести его нельзя.
  */
 @Composable
 private fun NotPairedContent() {

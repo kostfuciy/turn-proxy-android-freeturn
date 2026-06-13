@@ -15,7 +15,7 @@ import java.util.Locale
 /**
  * Нотификации прокси-сервиса: foreground-статус (+скорость/число потоков) и
  * отдельный алерт ручной капчи. Статус и скорость держит внутри, перерисовывает
- * сам. Скорость/счётчик дописываются только когда статус == «активно» (без WG).
+ * сам. Скорость/счётчик дописываются только когда статус == "активно" (без WG).
  */
 class ProxyNotifier(private val service: Service) {
 
@@ -57,7 +57,7 @@ class ProxyNotifier(private val service: Service) {
         )
     }
 
-    /** Базовый статус «Подключение…» для самого первого startForeground. */
+    /** Базовый статус "Подключение..." для самого первого startForeground. */
     fun prepareConnecting() {
         baseStatus = service.getString(R.string.notif_proxy_connecting)
     }
@@ -72,7 +72,7 @@ class ProxyNotifier(private val service: Service) {
         if (isActive) show()
     }
 
-    /** Перерисовать (обновился счётчик потоков) — только если статус активен. */
+    /** Перерисовать (обновился счётчик потоков) - только если статус активен. */
     fun refreshStats() {
         if (isActive) show()
     }
@@ -117,7 +117,7 @@ class ProxyNotifier(private val service: Service) {
         } catch (_: SecurityException) {}
     }
 
-    /** Показ алерта капчи. Дедуп: пока предыдущий не закрыт — повторно не шумим. */
+    /** Показ алерта капчи. Дедуп: пока предыдущий не закрыт - повторно не шумим. */
     fun showCaptcha() {
         if (captchaActive) return
         captchaActive = true
@@ -133,7 +133,7 @@ class ProxyNotifier(private val service: Service) {
         try {
             NotificationManagerCompat.from(service).notify(NOTIF_ID_CAPTCHA, notification)
         } catch (_: SecurityException) {
-            // POST_NOTIFICATIONS отозван на API 33+ — молча игнорируем, диалог в UI
+            // POST_NOTIFICATIONS отозван на API 33+ - молча игнорируем, диалог в UI
             // всё равно откроется через captchaSession StateFlow.
         }
     }

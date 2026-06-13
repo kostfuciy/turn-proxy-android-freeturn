@@ -51,13 +51,7 @@ import com.freeturn.app.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 import com.freeturn.app.ui.theme.Spacing
 
-/**
- * Главный экран — тонкий слой над ViewModel: собирает состояния, держит
- * системные ланчеры (VPN-согласие, стартовые разрешения) и раскладывает
- * чистые компоненты: [ConnectionHero], [SplitTunnelChip], [ServersSheetContent],
- * [UpdateDialogs]. Без единого сервера лист и тоггл скрыты — показывается
- * [HomeEmptyState] с CTA добавления.
- */
+/** Главный экран (собирает состояния, держит системные ланчеры и чистые компоненты). */
 @Composable
 fun HomeScreen(
     settingsViewModel: SettingsViewModel,
@@ -81,17 +75,14 @@ fun HomeScreen(
     val showSplitSheet = rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    // Standard bottom sheet: свёрнутый peek = карточка активного сервера,
-    // тянется вверх до полного списка серверов. Без Hidden в enabledValues —
-    // sheet всегда виден, не прячется полностью.
+    // Нижний лист серверов (всегда виден).
     val sheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded,
             enabledValues = setOf(SheetValue.PartiallyExpanded, SheetValue.Expanded)
         )
     )
-    // WireGuard-туннелю нужно согласие пользователя на VPN. После выдачи —
-    // запускаем прокси (а ProxyService уже поднимет WG поверх него).
+    // Запрос VPN-разрешения для WireGuard.
     val wireGuardPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -113,14 +104,11 @@ fun HomeScreen(
 
     val sheetColor = MaterialTheme.colorScheme.surfaceContainerLow
     val topBar: @Composable () -> Unit = {
-        // Без заголовка: бар нужен только как место для иконки логов в углу
-        // и корректные инсеты статус-бара.
+        // TopAppBar: только иконка логов и инсеты.
         TopAppBar(
             title = {},
             actions = {
-                // Вход в экран логов — при «Показывать логи» И включённом nerdMode.
-                // Обе галки обязаны быть видимыми одновременно: иначе выключение
-                // nerdMode оставляло бы кнопку без доступного тоггла её выключить.
+                // Вход в экран логов (nerdMode + logsEnabled).
                 if (clientConfig.logsEnabled && nerdMode) {
                     IconButton(onClick = {
                         HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
@@ -136,10 +124,7 @@ fun HomeScreen(
         )
     }
 
-    // Без серверов листу нечего показывать и запускать нечего: вместо
-    // BottomSheetScaffold — обычный Scaffold с приглашением добавить сервер.
-    // Пока снимок не загружен — пустое тело, чтобы ни sheet, ни empty-state
-    // не мигали на старте.
+    // Без серверов: Scaffold с приглашением добавить. Не загружен: пустое тело.
     when {
         !serversSnapshot.loaded ->
             Scaffold(topBar = topBar, snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
@@ -172,8 +157,7 @@ fun HomeScreen(
                         scope.launch { sheetScaffoldState.bottomSheetState.partialExpand() }
                     },
                     onOpenServerSettings = { id ->
-                        // Сворачиваем лист перед уходом в хаб — вернувшись, юзер видит главный
-                        // экран, а не распахнутый список.
+                        // Сворачиваем лист перед уходом в настройки.
                         scope.launch { sheetScaffoldState.bottomSheetState.partialExpand() }
                         onOpenServerSettings(id)
                     }
@@ -201,7 +185,7 @@ fun HomeScreen(
                                     HapticUtil.perform(context, HapticUtil.Pattern.TOGGLE_ON)
                                     startProxyWithTunnel()
                                 }
-                                // CaptchaRequired: прокси под капчей работает — тоггл его останавливает.
+                                // CaptchaRequired: прокси под капчей работает - тоггл его останавливает.
                                 is ProxyState.Running, is ProxyState.Connecting,
                                 is ProxyState.Starting, is ProxyState.CaptchaRequired -> {
                                     HapticUtil.perform(context, HapticUtil.Pattern.TOGGLE_OFF)
@@ -212,8 +196,7 @@ fun HomeScreen(
                     )
                 }
 
-                // Ссылка-индикатор split-tunneling прямо над свёрнутым листом сервера.
-                // Только в WG-режиме: без конфига WireGuard (proxy-режим) сплит не работает.
+                // Индикатор split-tunneling (только для WG).
                 if (clientConfig.wireGuardActive) {
                     SplitTunnelChip(
                         splitActive = clientConfig.splitTunnelMode != SplitTunnelMode.ALL,

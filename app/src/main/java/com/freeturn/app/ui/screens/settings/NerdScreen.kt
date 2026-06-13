@@ -54,13 +54,13 @@ import com.freeturn.app.viewmodel.ServerViewModel
 import com.freeturn.app.viewmodel.SettingsViewModel
 import com.freeturn.app.ui.theme.Spacing
 
-/** Тег релиза приходит и как "1.0.3", и как "v1.0.3" — нормализуем без "vv". */
+/** Тег релиза приходит и как "1.0.3", и как "v1.0.3" - нормализуем без "vv". */
 private fun versionLabel(version: String): String = "v${version.removePrefix("v")}"
 
 /**
- * «Отладочная информация» — отдельный экран (вход из хаба, гейт по nerdMode): отладочные
- * per-server флаги (подробные логи, показ логов) + состояние ядра + журнал сервера
- * и SSH-лог. Потоки логов собираем только здесь — хаб на них не подписан.
+ * "Отладочная информация" - отдельный экран (вход из хаба, гейт по nerdMode): per-server
+ * отладочные флаги, состояние ядра, журнал сервера и SSH-лог. Потоки логов собираем
+ * только здесь - хаб на них не подписан.
  */
 @Composable
 fun NerdScreen(
@@ -75,13 +75,13 @@ fun NerdScreen(
     val server = snapshot.list.firstOrNull { it.id == serverId }
     val isActive = snapshot.activeId == serverId
 
-    // Сервер удалён — выходим назад (как в хабе).
+    // Сервер удалён - выходим назад (как в хабе).
     if (snapshot.loaded && server == null) {
         LaunchedEffect(Unit) { onBack() }
         return
     }
 
-    // hubStatus принадлежит активному серверу — для неактивного живого статуса нет.
+    // hubStatus принадлежит активному серверу - для неактивного живого статуса нет.
     val online = if (isActive) coreStatus as? ServerHubStatus.Online else null
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -94,7 +94,7 @@ fun NerdScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        // Экран всегда внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        // Экран всегда внутри NavigationSuite - нижний бар сам держит навбар-инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -140,7 +140,7 @@ private fun NerdContent(
     val journalLoading by serverViewModel.journalLoading.collectAsStateWithLifecycle()
 
     // Per-server отладочные флаги. updateServerClient разводит active/inactive и
-    // применяет logsEnabled живьём — отдельные VM-сеттеры не нужны.
+    // применяет logsEnabled живьём - отдельные VM-сеттеры не нужны.
     SettingsGroup {
         SettingsGroupItem(0, 2) {
             SettingsSwitchRow(
@@ -164,10 +164,10 @@ private fun NerdContent(
         }
     }
 
-    // Живое состояние ядра — только при живом SSH (online != null).
+    // Живое состояние ядра - только при живом SSH (online != null).
     if (online != null) CoreStateCard(online, privacyMode)
 
-    // Параметры запуска реконструируются из конфига — видны всегда, даже оффлайн.
+    // Параметры запуска реконструируются из конфига - видны всегда, даже оффлайн.
     LaunchParamsCard(server, privacyMode)
 
     // Единый SSH-лог: копит весь вывод команд (включая ошибки сопряжения и server.log,
@@ -190,7 +190,7 @@ private fun NerdContent(
     }
 }
 
-/** Сырое состояние ядра: подписанные строки «ключ — значение» вместо безымянных чипов. */
+/** Сырое состояние ядра: подписанные строки "ключ - значение". */
 @Composable
 private fun CoreStateCard(online: ServerHubStatus.Online, privacyMode: Boolean) {
     Surface(
@@ -203,8 +203,8 @@ private fun CoreStateCard(online: ServerHubStatus.Online, privacyMode: Boolean) 
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Text(stringResource(R.string.nerd_core_state), style = MaterialTheme.typography.titleMedium)
-            // Одно логичное состояние: «работает» уже подразумевает «установлено».
-            // Не установлено → остановлен → работает.
+            // Одно состояние: "работает" уже подразумевает "установлено".
+            // Не установлено -> остановлен -> работает.
             val stateRes = when {
                 !online.installed -> R.string.nerd_state_not_installed
                 !online.running -> R.string.nerd_state_stopped
@@ -243,10 +243,10 @@ private fun NerdStateRow(label: String, value: String, mono: Boolean = false) {
 }
 
 /**
- * Параметры запуска ядра — реальные argv, которыми стартуют серверный и клиентский
- * бинарники. Реконструируются из конфига (тот же [CoreArgs.client], что и в движке;
- * серверный — через [ServerCommand]), поэтому видны всегда, даже без живого SSH.
- * Секреты (obf-ключ, vk-ссылка, адрес пира/TURN) маскируются под privacyMode.
+ * Параметры запуска ядра - реальные argv серверного и клиентского бинарников.
+ * Реконструируются из конфига (тот же [CoreArgs.client], что и в движке; серверный -
+ * через [ServerCommand]), поэтому видны всегда, даже без живого SSH. Секреты
+ * (obf-ключ, vk-ссылка, адрес пира/TURN) маскируются под privacyMode.
  */
 @Composable
 private fun LaunchParamsCard(server: Server, privacyMode: Boolean) {

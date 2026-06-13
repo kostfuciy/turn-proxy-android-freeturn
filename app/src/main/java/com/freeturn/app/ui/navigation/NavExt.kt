@@ -7,7 +7,7 @@ import androidx.navigation.NavHostController
 
 // Контент экрана кликабелен уже во время навигационного перехода, а RESUMED его entry
 // становится только по окончании анимации. Поздний второй тап успевал провалиться в
-// элемент нового экрана — до RESUMED навигационные тапы глотаем.
+// элемент нового экрана - до RESUMED навигационные тапы глотаем.
 internal fun NavBackStackEntry.isResumed() =
     lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
 

@@ -19,8 +19,8 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Кэш иконок приложений в памяти (packageName → ImageBitmap). Иконки растеризуются
- * до фиксированного размера, чтобы ограничить память; loadIcon тяжёлый — только IO.
+ * Кэш иконок приложений в памяти (packageName -> ImageBitmap). Иконки растеризуются
+ * до фиксированного размера, чтобы ограничить память; loadIcon тяжёлый - только IO.
  */
 private object AppIconCache {
     private const val ICON_PX = 160
@@ -40,7 +40,7 @@ private object AppIconCache {
         }
 }
 
-/** Иконка приложения. Грузится из кэша/IO; до готовности — пустое место того же размера. */
+/** Иконка приложения. Грузится из кэша/IO; до готовности - пустое место того же размера. */
 @Composable
 fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current

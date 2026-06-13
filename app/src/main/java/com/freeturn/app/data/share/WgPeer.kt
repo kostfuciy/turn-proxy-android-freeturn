@@ -5,14 +5,14 @@ import java.util.Base64
 /** WG-пир сервера из subcommand `peer-list`. */
 data class WgPeer(
     val pubkey: String,
-    /** Имя из маркера ft-user. Пусто — пир без маркера (старые установки, ручные правки). */
+    /** Имя из маркера ft-user. Пусто - пир без маркера (старые установки, ручные правки). */
     val name: String,
     val ip: String,
-    /** Epoch-секунды последнего handshake. null — ни разу / интерфейс не поднят. */
+    /** Epoch-секунды последнего handshake. null - ни разу / интерфейс не поднят. */
     val lastHandshakeEpoch: Long?,
-    /** На сервере сохранён клиентский conf — можно выдать ссылку повторно. */
+    /** На сервере сохранён клиентский conf - можно выдать ссылку повторно. */
     val hasStoredConf: Boolean,
-    /** Пир самого владельца (wireguard-client.conf мастера) — не отзываем. */
+    /** Пир самого владельца (wireguard-client.conf мастера) - не отзываем. */
     val isSelf: Boolean
 )
 
@@ -58,7 +58,7 @@ object WgPeerParser {
     }
 }
 
-/** base64(UTF-8) → имя; битое значение → пусто. */
+/** base64(UTF-8) -> имя; битое значение -> пусто. */
 private fun decodeNameB64(b64: String?): String {
     if (b64.isNullOrBlank()) return ""
     return try {

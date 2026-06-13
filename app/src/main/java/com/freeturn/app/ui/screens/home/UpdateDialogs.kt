@@ -24,7 +24,7 @@ import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.domain.UpdateState
 
 /**
- * Диалоги цикла обновления приложения: доступно → качается → готово к установке.
+ * Диалоги цикла обновления приложения: доступно -> качается -> готово к установке.
  * Чистый компонент: состояние и действия приходят снаружи.
  */
 @Composable
@@ -35,7 +35,7 @@ internal fun UpdateDialogs(
     onReset: () -> Unit
 ) {
     val context = LocalContext.current
-    // Версия, для которой диалог «Доступно обновление» отклонён:
+    // Версия, для которой диалог "Доступно обновление" отклонён:
     // следующая версия покажет диалог заново.
     var dismissedVersion by rememberSaveable { mutableStateOf<String?>(null) }
 

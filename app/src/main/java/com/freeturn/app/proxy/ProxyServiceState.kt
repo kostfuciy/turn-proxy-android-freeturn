@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 
 /**
  * Централизованное состояние прокси-сервиса.
- * Публичный API — только read-only Flow, мутация через явные методы.
+ * Публичный API - только read-only Flow, мутация через явные методы.
  */
 object ProxyServiceState {
 
@@ -40,13 +40,8 @@ object ProxyServiceState {
     val connectionStats: StateFlow<ConnectionStats> = _connectionStats.asStateFlow()
 
     /**
-     * Момент первого успешного подключения в рамках текущей сессии пользователя
-     * (`SystemClock.elapsedRealtime()` — устойчиво к переводу часов).
-     *
-     * null = ни одного успешного подключения в этой сессии ещё не было, либо
-     * прокси остановлен. Watchdog-рестарт НЕ сбрасывает значение: с точки
-     * зрения пользователя он нажал «вкл» один раз, и время активности —
-     * это время от первого Established до остановки.
+     * Момент первого подключения (SystemClock.elapsedRealtime()).
+     * При watchdog-рестарте не сбрасывается.
      */
     private val _connectedSince = MutableStateFlow<Long?>(null)
     val connectedSince: StateFlow<Long?> = _connectedSince.asStateFlow()
@@ -83,11 +78,7 @@ object ProxyServiceState {
         _connectionStats.value = stats
     }
 
-    /**
-     * Запомнить момент первого успешного подключения сессии. Повторные вызовы
-     * игнорируются — таймер стартует один раз и не перезапускается при
-     * watchdog-рестарте/временной потере всех потоков.
-     */
+    /** Запомнить момент первого подключения сессии. Повторные вызовы игнорируются. */
     fun markConnectedIfAbsent(nowElapsed: Long) {
         _connectedSince.compareAndSet(null, nowElapsed)
     }

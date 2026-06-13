@@ -20,7 +20,7 @@ import com.freeturn.app.viewmodel.ProxyViewModel
 import com.freeturn.app.viewmodel.ServerViewModel
 import com.freeturn.app.viewmodel.SettingsViewModel
 
-/** Вкладка «Настройки»: Настройки → Серверы → [сервер] → подключение/режим/сервер → SSH. */
+/** Вкладка "Настройки": Настройки -> Серверы -> [сервер] -> подключение/режим/сервер -> SSH. */
 internal fun NavGraphBuilder.settingsGraph(
     navController: NavHostController,
     settingsViewModel: SettingsViewModel,
@@ -122,7 +122,7 @@ internal fun NavGraphBuilder.settingsGraph(
             SshSetupScreen(
                 serverViewModel = serverViewModel,
                 settingsViewModel = settingsViewModel,
-                // Форма поверх настроек сервера — после успеха возвращаемся назад.
+                // Форма поверх настроек сервера - после успеха возвращаемся назад.
                 onConnected = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )

@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.freeturn.app.R
 import com.freeturn.app.ui.theme.Spacing
 
-/** Тональная карточка ошибки (errorContainer) — единый inline-вид для форм и экранов. */
+/** Тональная карточка ошибки (errorContainer) - единый inline-вид для форм и экранов. */
 @Composable
 fun InlineErrorCard(message: String) {
     Surface(

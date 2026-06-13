@@ -21,9 +21,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 /**
- * Системная настройка «Убрать анимации» (Settings → Спец. возможности). true = анимации
+ * Системная настройка "Убрать анимации" (Settings -> Спец. возможности). true = анимации
  * выключены. Читается один раз за жизнь Activity (staticCompositionLocalOf + keyless
- * remember) — живое переключение тумблера для приложения избыточно. Потребители гасят
+ * remember) - живое переключение тумблера для приложения избыточно. Потребители гасят
  * необязательную моушн: nav-переходы, animateContentSize и т.п.
  */
 val LocalReducedMotion = staticCompositionLocalOf { false }

@@ -55,8 +55,8 @@ import com.freeturn.app.viewmodel.SetupTaskKind
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Шаг 3 мастера: чек-лист установки → итог. Ошибка показывает карточку с текстом
- * и действиями «Повторить» / «К настройкам».
+ * Шаг 3 мастера: чек-лист установки -> итог. Ошибка показывает карточку с текстом
+ * и действиями "Повторить" / "К настройкам".
  */
 @Composable
 fun SetupInstallStep(
@@ -100,7 +100,7 @@ fun SetupInstallStep(
     }
 }
 
-/** Чек-лист задач установки: выполнено → активная → ожидание, wavy-индикатор сверху. */
+/** Чек-лист задач установки: выполнено -> активная -> ожидание, wavy-индикатор сверху. */
 @Composable
 private fun TaskChecklistCard(install: SetupInstallState) {
     val failed = install.error != null
@@ -140,7 +140,7 @@ private fun TaskRow(label: String, isDone: Boolean, isActive: Boolean, isFailed:
     val stateDesc = stringResource(state.descRes)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        // Иконка и цвет недоступны TalkBack — статус отдаём stateDescription.
+        // Иконка и цвет недоступны TalkBack - статус отдаём stateDescription.
         modifier = Modifier.semantics(mergeDescendants = true) { stateDescription = stateDesc }
     ) {
         val popSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
@@ -180,7 +180,7 @@ private fun TaskRow(label: String, isDone: Boolean, isActive: Boolean, isFailed:
         Text(
             label,
             style = MaterialTheme.typography.bodyMedium,
-            // Ожидающие задачи — onSurfaceVariant: это контент, не disabled-состояние.
+            // Ожидающие задачи - onSurfaceVariant: это контент, не disabled-состояние.
             color = if (isDone || isActive) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -208,7 +208,7 @@ private fun SetupDoneCard(summary: SetupSummary) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
-            // Бейдж в форме Sunny — та же форма, что у иконок строк настроек.
+            // Бейдж в форме Sunny - та же форма, что у иконок строк настроек.
             // Появляется expressive-пружиной (момент успеха).
             val badgeVisible = remember {
                 MutableTransitionState(reducedMotion).apply { targetState = true }

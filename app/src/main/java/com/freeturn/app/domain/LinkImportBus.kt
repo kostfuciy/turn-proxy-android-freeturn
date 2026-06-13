@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
  * Шина сырых freeturn://-строк на импорт. Три источника (deep link из
- * MainActivity, QR-скан, вставка из буфера) — один консьюмер (ImportViewModel).
+ * MainActivity, QR-скан, вставка из буфера) - один консьюмер (ImportViewModel).
  * CONFLATED: непрочитанная ссылка вытесняется новой, буфер не копится.
  */
 class LinkImportBus {

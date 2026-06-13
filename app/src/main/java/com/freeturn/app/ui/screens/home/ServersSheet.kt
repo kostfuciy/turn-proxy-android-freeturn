@@ -1,4 +1,4 @@
-@file:OptIn(
+﻿@file:OptIn(
     androidx.compose.material3.ExperimentalMaterial3Api::class,
     androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class
 )
@@ -49,13 +49,7 @@ import com.freeturn.app.ui.components.settingsItemShape
 import com.freeturn.app.ui.util.redact
 import com.freeturn.app.ui.theme.Spacing
 
-/**
- * Нижний лист серверов на главном: шапка активного сервера, бейдж провайдера и
- * сегментированный список (тот же expressive-стиль, что и «Настройки → Серверы»).
- * Лист только переключает и показывает: управление сервером — в его хабе (кнопка
- * настроек в строке, [onOpenServerSettings]), добавление — отдельным экраном.
- * Чистый компонент: снимок и действия приходят снаружи.
- */
+/** Нижний лист серверов: шапка активного сервера, бейдж и список. */
 @Composable
 internal fun ServersSheetContent(
     snapshot: ServersSnapshot,
@@ -71,15 +65,13 @@ internal fun ServersSheetContent(
             .fillMaxHeight()
             .navigationBarsPadding()
     ) {
-        // Шапка: имя активного сервера + адрес.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.xxl, vertical = Spacing.xs),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Серверы есть всегда (без них HomeScreen sheet не показывает), но активный
-            // может быть не выбран — тогда конфиг рантайма не привязан к серверу.
+            // Активный сервер может быть не выбран.
             val serverName = active?.name ?: stringResource(R.string.server_unsaved_label)
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
@@ -96,13 +88,12 @@ internal fun ServersSheetContent(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            // Только адрес: провайдера несёт чип-бейдж ниже, дублировать его тут — шум.
+            // Только адрес: провайдера несёт чип-бейдж ниже, дублировать его тут - шум.
             val sub = active?.let {
                 (it.client.serverAddress.takeIf { a -> a.isNotBlank() }
                     ?: it.ssh.ip.takeIf { a -> a.isNotBlank() })?.redact(privacyMode)
             }
-            // Подзаголовок рендерим всегда: пустой Text держит высоту строки, иначе без
-            // сервера контент подъезжает и бейдж провайдера выглядывает из peek-зоны.
+            // Подзаголовок всегда, чтобы удержать высоту peek-зоны.
             Spacer(Modifier.height(4.dp))
             Text(
                 sub.orEmpty(),
@@ -116,7 +107,6 @@ internal fun ServersSheetContent(
 
         Spacer(Modifier.height(16.dp))
 
-        // Чип-бейдж провайдера. Провайдер один (VK) — выбора нет, только индикация.
         ProviderChip(
             current = active?.client?.provider ?: Provider.VK,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -141,13 +131,13 @@ internal fun ServersSheetContent(
                 val sub = listOfNotNull(
                     p.client.serverAddress.takeIf { it.isNotBlank() }?.redact(privacyMode),
                     p.ssh.ip.takeIf { it.isNotBlank() }?.let { "SSH ${it.redact(privacyMode)}" }
-                ).joinToString(" · ").ifBlank { "—" }
+                ).joinToString(" · ").ifBlank { "-" }
                 ServerRow(
                     name = p.name,
                     subtitle = sub,
                     isActive = isActive,
                     shape = settingsItemShape(index, snapshot.list.size),
-                    // Лист сам на surfaceContainerLow — строкам нужен контраст повыше.
+                    // Лист сам на surfaceContainerLow - строкам нужен контраст повыше.
                     inactiveContainer = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick = { if (!isActive) onApplyServer(p.id) },
                     trailing = {
@@ -166,10 +156,7 @@ internal fun ServersSheetContent(
     }
 }
 
-/**
- * Чип-бейдж провайдера TURN-creds: Sunny-бейдж на primary + имя. Статичный —
- * провайдер пока один, дропдаун только изображал выбор и шумел стрелкой.
- */
+/** Бейдж провайдера TURN-creds. */
 @Composable
 private fun ProviderChip(
     current: String,
@@ -212,3 +199,4 @@ private fun providerLabel(value: String): String = when (value) {
     Provider.VK -> stringResource(R.string.provider_vk)
     else -> value
 }
+

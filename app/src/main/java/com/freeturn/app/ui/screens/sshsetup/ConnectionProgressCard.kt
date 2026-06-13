@@ -26,7 +26,7 @@ import com.freeturn.app.ui.screens.setup.BusyProgressIndicator
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Прогресс сопряжения: wavy-индикатор + чек-лист шагов (подключение → авторизация →
+ * Прогресс сопряжения: wavy-индикатор + чек-лист шагов (подключение -> авторизация ->
  * проверка SSH). Тональная карточка в едином стиле настроек.
  */
 @Composable
@@ -60,7 +60,7 @@ internal fun ConnectionProgressCard(step: String) {
                 steps.forEachIndexed { index, label ->
                     val isDone = index < currentIndex
                     val isActive = index == currentIndex
-                    // Статус шага иконкой и цветом TalkBack не видит — отдаём stateDescription.
+                    // Статус шага иконкой и цветом TalkBack не видит - отдаём stateDescription.
                     val stateDesc = stringResource(when {
                         isDone -> R.string.setup_task_state_done
                         isActive -> R.string.setup_task_state_active
@@ -90,7 +90,7 @@ internal fun ConnectionProgressCard(step: String) {
                         Text(
                             label,
                             style = MaterialTheme.typography.bodyMedium,
-                            // Будущие шаги — onSurfaceVariant: контент, не disabled.
+                            // Будущие шаги - onSurfaceVariant: контент, не disabled.
                             color = if (isActive || isDone) MaterialTheme.colorScheme.onSurface
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                         )

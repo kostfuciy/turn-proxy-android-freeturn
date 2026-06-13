@@ -139,7 +139,7 @@ private fun LogLine(line: String) {
     val isSuccess = lower.contains("запущен") || lower.contains("подключен") ||
                     lower.contains("success") || lower.contains("started") ||
                     lower.contains("established")
-    // Ключевые события сессии — выделяем акцентом (прежде маркировались "===").
+    // Ключевые события сессии - выделяем акцентом (прежде маркировались "===").
     val isEvent = lower.contains("запуск прокси") || lower.contains("остановка") ||
                   lower.contains("процесс остановлен") || lower.contains("сессия завершена") ||
                   lower.contains("быстрый выход") || lower.startsWith("сеть:")

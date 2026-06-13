@@ -17,16 +17,16 @@ import com.freeturn.app.domain.server.toFailure
 import java.util.Base64
 
 /**
- * SSH-операции шаринга доступа (вкладка «Поделиться»). Собственный [SSHManager]
- * и [ServerControl] — как у [ServerSetupRepository]: не трогаем живую сессию
- * активного сервера. Состояния не держит, ошибки — типизированным [Result].
+ * SSH-операции шаринга доступа (вкладка "Поделиться"). Собственный [SSHManager]
+ * и [ServerControl] - как у [ServerSetupRepository]: не трогаем живую сессию
+ * активного сервера. Состояния не держит, ошибки - типизированным [Result].
  */
 class ShareRepository(context: Context, ssh: SSHManager) {
 
     private val control = ServerControl(context, ssh)
 
     /** Свежесозданный пир: клиентский conf для ссылки + pubkey/ip для локального
-     *  аппенда в уже загруженный список «Пользователей». */
+     *  аппенда в уже загруженный список "Пользователей". */
     data class NewPeer(val pubkey: String, val ip: String, val clientConf: String)
 
     /** Сохранённый доступ пира для повторной выдачи: conf + его cid из allowlist. */
@@ -45,7 +45,7 @@ class ShareRepository(context: Context, ssh: SSHManager) {
             )
         }
 
-    /** [clientId] — свежий cid гостя: скрипт сажает его в allowlist (comment = имя). */
+    /** [clientId] - свежий cid гостя: скрипт сажает его в allowlist (comment = имя). */
     suspend fun addPeer(
         cfg: SshConfig,
         name: String,
@@ -66,7 +66,7 @@ class ShareRepository(context: Context, ssh: SSHManager) {
         }
     }
 
-    /** WG-пиры + allowlist-гости одной SSH-сессией (вкладка «Пользователи»). */
+    /** WG-пиры + allowlist-гости одной SSH-сессией (вкладка "Пользователи"). */
     suspend fun listShared(cfg: SshConfig): Result<Pair<List<WgPeer>, List<SharedClient>>> =
         when (val r = control.run(cfg, ServerCommand.ShareList)) {
             is CmdResult.Err -> r.toFailure()
@@ -76,7 +76,7 @@ class ShareRepository(context: Context, ssh: SSHManager) {
         }
 
     /**
-     * Conf пира + его cid. [candidateClientId]/[name] — backfill: пир без
+     * Conf пира + его cid. [candidateClientId]/[name] - backfill: пир без
      * cid-маппинга (выдан до allowlist) регистрируется этим cid на сервере.
      */
     suspend fun peerConf(

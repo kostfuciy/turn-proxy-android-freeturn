@@ -7,9 +7,7 @@ import java.util.UUID
 
 /**
  * Именованный сервер: SSH-доступ + клиентские параметры + серверные опции.
- * Список хранится сериализованным в DataStore (SERVERS_JSON) — единственный
- * источник истины; конфиг активного сервера рантайм читает через производные
- * флоу AppPreferences.
+ * Список сериализуется в DataStore (SERVERS_JSON).
  */
 data class Server(
     val id: String = UUID.randomUUID().toString(),
@@ -35,7 +33,7 @@ data class ServersSnapshot(
     val active: Server? get() = list.firstOrNull { it.id == activeId }
 }
 
-// Имена JSON-ключей — контракт с сохранёнными данными: менять только с миграцией.
+// Имена JSON-ключей - контракт с сохранёнными данными: менять только с миграцией.
 internal object ServerJson {
     fun encodeList(list: List<Server>): String {
         val arr = JSONArray()
@@ -124,8 +122,7 @@ internal object ServerJson {
                 provider = cliO.optString("provider", Provider.VK).let {
                     if (it in Provider.ALL) it else Provider.VK
                 },
-                // Фоллбэки = дефолты ClientConfig (encode пишет все ключи — сюда
-                // попадают только записи без ключа, т.е. вновь добавленные поля).
+                // Фоллбэки = дефолты ClientConfig (для новых полей).
                 threads = cliO.optInt("threads", 12),
                 streamsPerCred = cliO.optInt("streamsPerCred", 6),
                 useUdp = cliO.optBoolean("useUdp", false),

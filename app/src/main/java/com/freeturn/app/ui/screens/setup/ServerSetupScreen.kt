@@ -82,11 +82,7 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import com.freeturn.app.ui.theme.Spacing
 
-/**
- * Мастер «Свой сервер»: SSH → опросник → установка. Сервер появляется в списке
- * только после успешной установки; шаги живут в одном destination, переходы —
- * внутренним AnimatedContent, «назад» ходит по шагам.
- */
+/** Мастер "Свой сервер": SSH -> опросник -> установка (анимация через AnimatedContent). */
 @Composable
 fun ServerSetupScreen(
     onClose: () -> Unit,
@@ -101,11 +97,10 @@ fun ServerSetupScreen(
     val defaultName = stringResource(R.string.add_default_server_name)
 
     var showAbortDialog by rememberSaveable { mutableStateOf(false) }
-    // Подсветка незаполненных полей: включается тапом по FAB на невалидной форме.
+    // Подсветка незаполненных полей (включается тапом по FAB).
     var highlightErrors by rememberSaveable { mutableStateOf(false) }
 
-    // «Назад» по шагам; во время установки — диалог прерывания (шаги идемпотентны,
-    // повтор безопасен), из успеха любой выход — завершение мастера.
+    // "Назад" по шагам (во время установки - диалог прерывания).
     val backAction: () -> Unit = when {
         state.step == SetupStep.Ssh -> onClose
         state.step == SetupStep.Config -> viewModel::backToSsh
@@ -113,8 +108,7 @@ fun ServerSetupScreen(
         install?.error != null -> viewModel::backToConfig
         else -> ({ showAbortDialog = true })
     }
-    // Первый шаг не перехватываем: системный «назад» закрывает мастер штатно,
-    // predictive back сохраняет свою анимацию.
+    // Первый шаг не перехватываем для работы predictive back.
     BackHandler(enabled = state.step != SetupStep.Ssh) { backAction() }
 
     if (showAbortDialog) {
@@ -137,8 +131,7 @@ fun ServerSetupScreen(
         )
     }
 
-    // Импорт клиентского WG-конфига из файла (шаг опросника, «Свой конфиг»).
-    // Ланчер держит screen — компоненты шагов остаются чистыми.
+    // Импорт WG-конфига из файла.
     val scope = rememberCoroutineScope()
     val wgFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -156,9 +149,7 @@ fun ServerSetupScreen(
         }
     }
 
-    // Один FAB-слот на все шаги: «Продолжить» → «Установить» → «На главную».
-    // На невалидной форме кнопка не прячется: тап даёт ERROR-haptic и подсвечивает
-    // незаполненные поля. Хостится до Scaffold: от видимости зависит клиренс снизу.
+    // FAB ("Продолжить" -> "Установить" -> "На главную").
     val fab: SetupFab? = when {
         state.step == SetupStep.Ssh && !state.checkingSsh ->
             SetupFab(R.string.setup_continue, R.drawable.chevron_right_24px) {
@@ -217,8 +208,7 @@ fun ServerSetupScreen(
             )
         },
         floatingActionButton = {
-            // Последний ненулевой fab держим для exit-анимации (иначе кнопка
-            // исчезает мгновенно, без scale-out).
+            // Последний ненулевой fab держим для exit-анимации.
             val shownFab = remember { mutableStateOf(fab) }
             if (fab != null) shownFab.value = fab
             AnimatedVisibility(
@@ -235,7 +225,7 @@ fun ServerSetupScreen(
                 }
             }
         },
-        // Экран внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        // Экран внутри NavigationSuite - нижний бар сам держит навбар-инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -246,7 +236,7 @@ fun ServerSetupScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Спеки переходов шагов — из expressive MotionScheme темы.
+            // Спеки переходов шагов - из expressive MotionScheme темы.
             val spatialSpec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
             val effectsSpec = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
             AnimatedContent(
@@ -255,7 +245,7 @@ fun ServerSetupScreen(
                     if (reducedMotion) {
                         fadeIn(tween(0)) togetherWith fadeOut(tween(0))
                     } else {
-                        // Shared-axis X: вперёд — слайд влево, назад — вправо.
+                        // Shared-axis X: вперёд - слайд влево, назад - вправо.
                         val forward = targetState.ordinal > initialState.ordinal
                         val dir = if (forward) 1 else -1
                         (fadeIn(effectsSpec) +
@@ -302,9 +292,7 @@ fun ServerSetupScreen(
                     }
                 }
             }
-            // Клиренс под FAB только когда он виден (FAB перекрывает нижний контент
-            // при скролле). Вне AnimatedContent — переходы шагов его не дёргают;
-            // анимация гасит скачок контента при появлении кнопки во время ввода.
+            // Клиренс под FAB. Анимация гасит скачок контента при появлении кнопки.
             val clearance by animateDpAsState(
                 targetValue = if (fab != null) 88.dp else 12.dp,
                 animationSpec = if (reducedMotion) snap() else spring(),
@@ -324,7 +312,7 @@ private fun StepProgressCapsules(current: Int, total: Int = 3) {
         modifier = Modifier
             .padding(top = Spacing.sm)
             .width(96.dp)
-            // Капсулы декоративны — TalkBack читает «Шаг N из M».
+            // Капсулы декоративны - TalkBack читает "Шаг N из M".
             .clearAndSetSemantics { contentDescription = description }
     ) {
         repeat(total) { i ->

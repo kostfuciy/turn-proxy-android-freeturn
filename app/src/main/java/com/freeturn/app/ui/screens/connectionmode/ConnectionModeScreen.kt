@@ -65,12 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Экран «Режим подключения»: явный переключатель Proxy / VPN (WireGuard). В VPN-режиме
- * — .conf из файла или ручной вставкой, имя туннеля и split-tunnel модалкой (для
- * активного сервера). Режим хранится в [ClientConfig.tunnelTransport] (NONE = proxy,
- * WIREGUARD = vpn).
- */
+/** Экран "Режим подключения" (Proxy / VPN). */
 @Composable
 fun ConnectionModeScreen(
     settingsViewModel: SettingsViewModel,
@@ -98,18 +93,14 @@ fun ConnectionModeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // userPickedVpn держит VPN-выбор на сессию экрана: пока конфиг пуст, транспорт при
-    // чтении нормализуется в NONE (WIREGUARD без конфига = выключен, см. AppPreferences),
-    // и без локального флага сегмент мигал бы обратно на Proxy. Сброс по saved.tunnelTransport.
+    // userPickedVpn сохраняет выбор на время сессии (чтобы сегмент не мигал).
     var userPickedVpn by remember(serverId, saved.tunnelTransport) { mutableStateOf<Boolean?>(null) }
     val isVpn = userPickedVpn ?: (saved.tunnelTransport == TunnelTransport.WIREGUARD)
 
     var wgConfig by remember(saved.wireGuardConfig) { mutableStateOf(saved.wireGuardConfig) }
     var wgName by remember(saved.wireGuardTunnelName) { mutableStateOf(saved.wireGuardTunnelName) }
 
-    // Единая запись WG-настроек: транспорт всегда выставляется по [isVpn] вместе с конфигом.
-    // Иначе segment-выбор VPN при пустом конфиге нормализуется в NONE, а последующая
-    // загрузка .conf транспорт не переписывает — VPN тихо остаётся выключенным.
+    // Запись WG-настроек: транспорт всегда выставляется вместе с конфигом.
     fun persistWg(vpn: Boolean = isVpn) {
         clientEdit {
             it.copy(
@@ -121,11 +112,10 @@ fun ConnectionModeScreen(
     }
 
     var showSplitSheet by rememberSaveable { mutableStateOf(false) }
-    // Лист только для активного сервера — при потере активности скрываем.
+    // Лист только для активного сервера - при потере активности скрываем.
     LaunchedEffect(isActive) { if (!isActive) showSplitSheet = false }
 
-    // Дебаунс WG-полей 600 мс. Первый прогон (значения = saved) пропускаем, чтобы не писать
-    // на входе. pendingSave → flush при выходе: dispose отменяет корутину и теряет правку.
+    // Дебаунс 600 мс для WG-полей.
     var wgDirty by remember(serverId) { mutableStateOf(false) }
     var pendingSave by remember(serverId) { mutableStateOf(false) }
     LaunchedEffect(wgConfig, wgName) {
@@ -175,7 +165,7 @@ fun ConnectionModeScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        // Всегда внутри NavigationSuite — нижний бар держит навбар-инсет сам.
+        // Всегда внутри NavigationSuite - нижний бар держит навбар-инсет сам.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -248,8 +238,7 @@ fun ConnectionModeScreen(
         }
     }
 
-    // Тот же лист split-tunnel, что на главном экране. Только для активного сервера —
-    // живой прокси/состояние принадлежат ему.
+    // Split-tunnel (только для активного сервера).
     if (showSplitSheet && isActive) {
         SplitTunnelModal(
             settingsViewModel = settingsViewModel,

@@ -42,8 +42,7 @@ class MainActivity : ComponentActivity() {
         // При recreation (поворот, смена темы) интент уже обработан в первом onCreate.
         if (savedInstanceState == null) handleLinkIntent(intent)
 
-        // На Android 13+ без POST_NOTIFICATIONS нотификация foreground-сервиса
-        // (статус прокси + кнопка Stop) не показывается. Запрашиваем при старте.
+        // Запрашиваем POST_NOTIFICATIONS (Android 13+) для показа нотификации сервиса.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED

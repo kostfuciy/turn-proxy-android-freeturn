@@ -68,12 +68,7 @@ import com.freeturn.app.ui.theme.extendedColorScheme
 import com.freeturn.app.domain.ProxyState
 import com.freeturn.app.ui.theme.Spacing
 
-/**
- * Герой главного экрана: кнопка-тоггл с морфом MaterialShapes по состоянию
- * (idle-печенька → вращающееся «солнце» подключения → круг работы → burst ошибки),
- * анимированная строка статуса и пилюля счётчика/uptime.
- * Чистый компонент: состояние и колбэк приходят снаружи.
- */
+/** Герой главного экрана: кнопка-тоггл, строка статуса и пилюля счётчика/uptime. */
 @Composable
 internal fun ConnectionHero(
     state: ProxyState,
@@ -104,8 +99,7 @@ internal fun ConnectionHero(
     }
 }
 
-// Состояния героя. CaptchaRequired — это Busy: прокси под капчей работает,
-// текст про капчу несёт строка статуса.
+// CaptchaRequired относится к Busy (прокси под капчей работает, текст в строке статуса).
 private enum class HeroKind { Idle, Busy, Running, Error }
 
 private fun ProxyState.heroKind(): HeroKind = when (this) {
@@ -115,8 +109,6 @@ private fun ProxyState.heroKind(): HeroKind = when (this) {
     is ProxyState.Error -> HeroKind.Error
     is ProxyState.Idle -> HeroKind.Idle
 }
-
-// Кнопка-тоггл
 
 @Composable
 private fun HeroToggleButton(
@@ -157,7 +149,6 @@ private fun HeroToggleButton(
         label = "btn_scale"
     )
 
-    // Морф формы кнопки между состояниями.
     val heroShape = rememberMorphingShape(
         target = when (kind) {
             HeroKind.Idle -> MaterialShapes.Cookie12Sided
@@ -168,7 +159,7 @@ private fun HeroToggleButton(
         reducedMotion = reducedMotion
     )
 
-    // Медленное вращение «солнца», пока идёт подключение.
+    // Вращаем фигуру, пока идёт подключение.
     val rotation = if (kind == HeroKind.Busy && !reducedMotion) {
         val spin = rememberInfiniteTransition(label = "hero_spin")
         val angle by spin.animateFloat(
@@ -192,7 +183,7 @@ private fun HeroToggleButton(
         tonalElevation = if (kind == HeroKind.Running) 3.dp else 1.dp
     ) {
         Box(
-            // Контр-вращение: крутится только фигура, контент стоит на месте.
+            // Контр-вращение: крутится только фигура.
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { rotationZ = -rotation },
@@ -219,7 +210,6 @@ private fun HeroToggleButton(
 @Composable
 private fun HeroIcon(kind: HeroKind, tint: Color) {
     when (kind) {
-        // Expressive shape-shifting лоадер вместо кругового индикатора.
         HeroKind.Busy -> LoadingIndicator(color = tint, modifier = Modifier.size(64.dp))
         HeroKind.Running -> Icon(
             painterResource(R.drawable.check_circle_24px), null,
@@ -235,8 +225,6 @@ private fun HeroIcon(kind: HeroKind, tint: Color) {
         )
     }
 }
-
-// Строка статуса
 
 @Composable
 private fun StatusLabel(state: ProxyState, reducedMotion: Boolean) {
@@ -279,8 +267,6 @@ private fun StatusLabel(state: ProxyState, reducedMotion: Boolean) {
     }
 }
 
-// Пилюля счётчика потоков и uptime
-
 @Composable
 private fun StatsPill(state: ProxyState, kind: HeroKind, uptimeText: String?) {
     val counts = when (state) {
@@ -296,7 +282,7 @@ private fun StatsPill(state: ProxyState, kind: HeroKind, uptimeText: String?) {
 
     // Слот фиксированной высоты: появление пилюли не сдвигает кнопку и статус.
     Box(modifier = Modifier.height(36.dp), contentAlignment = Alignment.Center) {
-        // Последний непустой текст — чтобы пилюля не пустела в кадрах exit-анимации.
+        // Последний непустой текст для exit-анимации.
         var lastText by remember { mutableStateOf("") }
         if (pillText != null) lastText = pillText
         AnimatedVisibility(
@@ -310,7 +296,7 @@ private fun StatsPill(state: ProxyState, kind: HeroKind, uptimeText: String?) {
             ) {
                 Text(
                     text = lastText,
-                    // tnum: тикающий таймер и счётчик не «дышат» по ширине.
+                    // tnum: моноширинные цифры (таймер не прыгает).
                     style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
@@ -320,13 +306,7 @@ private fun StatsPill(state: ProxyState, kind: HeroKind, uptimeText: String?) {
     }
 }
 
-// Морф-механика
-
-/**
- * Shape, перетекающий из предыдущей фигуры в [target] спрингом slowSpatial из
- * MotionScheme.expressive. MaterialShapes нормализованы в единичный квадрат —
- * масштабируем path под размер компонента. При reduced-motion — мгновенно.
- */
+/** Анимированный переход Shape в [target]. */
 @Composable
 private fun rememberMorphingShape(target: RoundedPolygon, reducedMotion: Boolean): Shape {
     var from by remember { mutableStateOf(target) }

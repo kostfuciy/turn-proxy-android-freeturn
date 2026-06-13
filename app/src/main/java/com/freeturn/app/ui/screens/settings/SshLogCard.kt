@@ -50,11 +50,8 @@ import com.freeturn.app.ui.theme.Spacing
 
 /**
  * Единый SSH-лог: весь вывод команд сопряжения/управления + server.log (тянется кнопкой
- * «Журнал сервера») — всё идёт сюда через runCmd.
- *
- * Раскладка трёхэтажная, чтобы ничего не толкалось в одной строке: шапка (заголовок +
- * счётчик строк), терминал, ряд действий во всю ширину. Терминал на inverseSurface —
- * настоящая тёмная консоль в светлой теме, с приглашением «❯» и мигающим курсором.
+ * "Журнал сервера") - всё идёт сюда через runCmd. Раскладка трёхэтажная, чтобы ничего
+ * не толкалось в одной строке: шапка (заголовок + счётчик строк), терминал, ряд действий.
  */
 @Composable
 internal fun SshLogCard(
@@ -104,7 +101,7 @@ internal fun SshLogCard(
 
             SshTerminalPane(lines)
 
-            // Действия отдельным рядом во всю ширину — в шапке им тесно на узких экранах.
+            // Действия отдельным рядом во всю ширину - в шапке им тесно на узких экранах.
             if (canFetchJournal || lines.isNotEmpty()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -138,7 +135,7 @@ internal fun SshLogCard(
                                 )
                             }
                         } else {
-                            // Оффлайн: журнал не потянуть, очистка — единственное действие.
+                            // Оффлайн: журнал не потянуть, очистка - единственное действие.
                             FilledTonalButton(onClick = onClear, modifier = Modifier.weight(1f)) {
                                 Icon(
                                     painterResource(R.drawable.delete_24px),
@@ -157,13 +154,12 @@ internal fun SshLogCard(
 }
 
 /**
- * Консоль SSH-лога: тёмная (inverseSurface) моноширинная панель с приглашением «❯» и
- * мигающим курсором в конце — пустой лог выглядит как ждущий терминал, а не дырка.
+ * Консоль SSH-лога: моноширинная панель с приглашением "❯" и мигающим курсором в конце.
  * Автопрокрутка к свежим строкам.
  */
 @Composable
 private fun SshTerminalPane(lines: List<String>) {
-    // Тональные роли M3 — как у LogPane соседних карточек: панель живёт в теме
+    // Тональные роли M3, как у LogPane соседних карточек: панель живёт в теме
     // (light/dark/dynamic color), консольность несут моно-шрифт, промпт и курсор.
     val fg = MaterialTheme.colorScheme.onSurfaceVariant
     val accent = MaterialTheme.colorScheme.primary
@@ -189,7 +185,7 @@ private fun SshTerminalPane(lines: List<String>) {
                     color = fg.copy(alpha = 0.55f)
                 )
             } else {
-                // Склейка дорогая (кап 500 строк) — кэшируем по содержимому лога.
+                // Склейка дорогая (кап 500 строк) - кэшируем по содержимому лога.
                 val text = remember(lines) { lines.joinToString("\n") }
                 Text(text, style = mono, color = fg)
             }

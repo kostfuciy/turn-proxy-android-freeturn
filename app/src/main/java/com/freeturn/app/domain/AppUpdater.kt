@@ -32,8 +32,7 @@ class AppUpdater(private val context: Context) {
     }
 
     /**
-     * @param silent true — при ошибке сети остаёмся в [UpdateState.Idle] (автопроверка при запуске).
-     *               false — показываем [UpdateState.Error] (ручная проверка из UI).
+     * @param silent true - игнорировать ошибки сети (автопроверка). false - показывать ошибки (ручная).
      */
     suspend fun checkForUpdate(silent: Boolean = false) {
         _state.value = UpdateState.Checking
@@ -59,7 +58,7 @@ class AppUpdater(private val context: Context) {
                 _state.value = UpdateState.NoUpdate
             }
         } catch (e: CancellationException) {
-            // Отмена корутины — штатный путь (structured concurrency), не ошибка сети.
+            // Штатная отмена корутины.
             throw e
         } catch (_: Exception) {
             _state.value = if (silent) UpdateState.Idle
@@ -82,8 +81,7 @@ class AppUpdater(private val context: Context) {
                 connection.readTimeout = 30_000
                 try {
                     connection.connect()
-                    // Без проверки кода 404/HTML-страница редиректа запишется в update.apk
-                    // и FileProvider отдаст мусор установщику.
+                    // Защита от записи 404/редирект-страниц в APK.
                     if (connection.responseCode !in 200..299) {
                         throw java.io.IOException("HTTP ${connection.responseCode}")
                     }

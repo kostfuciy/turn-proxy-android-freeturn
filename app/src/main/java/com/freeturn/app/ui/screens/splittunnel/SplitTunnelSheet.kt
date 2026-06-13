@@ -47,9 +47,9 @@ import com.freeturn.app.viewmodel.SettingsViewModel
 
 /**
  * Общий модальный лист split-tunneling. Один источник для главного экрана и экрана
- * «Режим подключения» — обёртка [ModalBottomSheet] вокруг [SplitTunnelSheetContent].
+ * "Режим подключения" - обёртка [ModalBottomSheet] вокруг [SplitTunnelSheetContent].
  * Лист открывается сразу на полную высоту (skipPartiallyExpanded) и держит инсеты сам
- * (contentWindowInsets = 0), чтобы не «вырастать» над клавиатурой при фокусе поиска.
+ * (contentWindowInsets = 0), чтобы не "вырастать" над клавиатурой при фокусе поиска.
  */
 @Composable
 fun SplitTunnelModal(
@@ -82,10 +82,10 @@ fun SplitTunnelModal(
 /**
  * Лист split-tunneling с главного экрана. Один общий sheet: свитч вкл/выкл,
  * выбор режима (include/exclude), поиск и список приложений с иконками/чекбоксами.
- * Всё пишется сразу в активный сервер через ViewModel — без буфера и «сохранить».
+ * Всё пишется сразу в активный сервер через ViewModel - без буфера и "сохранить".
  *
  * Свитч выкл == режим [SplitTunnelMode.ALL] (весь трафик в туннель). Пока прокси
- * активен (`locked`), любые изменения запрещены — контролы disabled.
+ * активен (`locked`), любые изменения запрещены - контролы disabled.
  */
 @Composable
 fun SplitTunnelSheetContent(
@@ -96,7 +96,7 @@ fun SplitTunnelSheetContent(
 ) {
     val context = LocalContext.current
     val enabled = mode != SplitTunnelMode.ALL
-    // Последний выбранный «рабочий» режим, чтобы свитч вкл возвращал его, а не дефолт.
+    // Последний выбранный "рабочий" режим, чтобы свитч вкл возвращал его, а не дефолт.
     var modeChoice by remember {
         mutableStateOf(if (mode != SplitTunnelMode.ALL) mode else SplitTunnelMode.EXCLUDE)
     }
@@ -107,8 +107,8 @@ fun SplitTunnelSheetContent(
     }
 
     // Высота контента стабильна (список фиксированной высоты), поэтому sheet
-    // открывается за одну анимацию и не «дёргается» при загрузке/поиске. Лист
-    // оставляем content-sized (без fillMaxSize) — так нет оверштута до пика.
+    // открывается за одну анимацию и не "дёргается" при загрузке/поиске. Лист
+    // оставляем content-sized (без fillMaxSize) - так нет оверштута до пика.
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -197,7 +197,7 @@ fun SplitTunnelSheetContent(
 /** Горизонтальный отступ контента листа. Совпадает с внутренним паддингом ListItem (M3). */
 private val HorizontalPadding = 16.dp
 
-/** Фиксированная высота области списка — стабильна при загрузке/поиске (нет ресайза листа). */
+/** Фиксированная высота области списка - стабильна при загрузке/поиске (нет ресайза листа). */
 private val ListHeight = 360.dp
 
 @Composable

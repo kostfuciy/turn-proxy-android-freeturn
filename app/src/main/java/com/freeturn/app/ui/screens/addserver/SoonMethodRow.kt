@@ -17,7 +17,7 @@ import com.freeturn.app.R
 import com.freeturn.app.ui.components.SettingsRowIcon
 import com.freeturn.app.ui.theme.Spacing
 
-/** Нереализованный способ добавления: строка на MD3 disabled 0.38 + бейдж «Скоро». */
+/** Нереализованный способ добавления: строка на MD3 disabled 0.38 + бейдж "Скоро". */
 @Composable
 internal fun SoonMethodRow(
     iconRes: Int,

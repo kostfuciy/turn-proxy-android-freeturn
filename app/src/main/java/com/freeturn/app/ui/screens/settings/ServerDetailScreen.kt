@@ -63,7 +63,7 @@ import com.freeturn.app.viewmodel.serverSettingsAvailable
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Детальный экран сервера — плоский хаб: шапка-сводка, вход в настройки провайдера
+ * Детальный экран сервера - плоский хаб: шапка-сводка, вход в настройки провайдера
  * (подключение / сервер), удаление через меню в TopAppBar.
  */
 @Composable
@@ -87,28 +87,28 @@ fun ServerDetailScreen(
     val server = snapshot.list.firstOrNull { it.id == serverId }
     val isActive = snapshot.activeId == serverId
 
-    // Сервер удалён (например, из этого же экрана) — выходим назад.
+    // Сервер удалён (например, из этого же экрана) - выходим назад.
     if (snapshot.loaded && server == null) {
         LaunchedEffect(Unit) { onBack() }
         return
     }
 
     // Единая статус-модель хаба: core-статус от VM (активный сервер) + server-контекст.
-    // Порядок гарантирует отсутствие мигания: пока снапшот не загружен — skeleton, а не Offline.
+    // Порядок гарантирует отсутствие мигания: пока снапшот не загружен - skeleton, а не Offline.
     val status: ServerHubStatus = when {
         !snapshot.loaded -> ServerHubStatus.Connecting
         !isActive -> ServerHubStatus.Offline
         server?.ssh?.ip.isNullOrBlank() -> ServerHubStatus.NotPaired
         else -> coreStatus
     }
-    // Вход в «Настройки сервера» доступен только при живом ядре (Online).
+    // Вход в "Настройки сервера" доступен только при живом ядре (Online).
     val online = status as? ServerHubStatus.Online
     val connected = online != null
 
     // Best-effort авто-сопряжение активного сервера при входе (не дублируем на других экранах).
     // Откладываем старт на длительность nav-перехода: иначе reconnect мгновенно дёргает
-    // sshState→Connecting, и hub-карточка запускает AnimatedContent size-spring + wavy-индикатор
-    // ОДНОВРЕМЕННО со slide-переходом — это и есть пролаг при заходе. После перехода — плавно.
+    // sshState -> Connecting, и hub-карточка запускает AnimatedContent size-spring + wavy-индикатор
+    // одновременно со slide-переходом - это и есть пролаг при заходе. После перехода - плавно.
     LaunchedEffect(isActive, sshConfig.ip, sshState) {
         if (isActive && sshConfig.ip.isNotBlank() && sshState is SshConnectionState.Disconnected) {
             kotlinx.coroutines.delay(350)
@@ -148,9 +148,9 @@ fun ServerDetailScreen(
                             )
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            // Управление ядром — только при живом сервере (Online). Пункты
+                            // Управление ядром - только при живом сервере (Online). Пункты
                             // адаптивны к состоянию: установка/обновление, старт, стоп. Во время
-                            // действия статус уходит в Working → online == null → пункты прячутся.
+                            // действия статус уходит в Working -> online == null -> пункты прячутся.
                             if (online != null) {
                                 DropdownMenuItem(
                                     text = {
@@ -226,7 +226,7 @@ fun ServerDetailScreen(
                 }
             )
         },
-        // Экран всегда внутри NavigationSuite — нижний бар сам держит навбар-инсет.
+        // Экран всегда внутри NavigationSuite - нижний бар сам держит навбар-инсет.
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -244,7 +244,7 @@ fun ServerDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg)
             ) {
                 if (server != null) {
-                    // SSH не настроен → синхронизировать нечего: тоггл гасим и держим OFF.
+                    // SSH не настроен -> синхронизировать нечего: тоггл гасим и держим OFF.
                     val sshConfigured = server.ssh.ip.isNotBlank()
                     ServerStatusCard(
                         status = status,
@@ -259,9 +259,9 @@ fun ServerDetailScreen(
                         }
                     )
 
-                    // Мастер-свитч синхронизации — перенесён из «Настроек сервера» в хаб.
+                    // Мастер-свитч синхронизации - перенесён из "Настроек сервера" в хаб.
                     // Без подзаголовка: описание раздувало карточку, предупреждение при выкл
-                    // даёт баннер на экране настроек сервера. Без SSH синхронизировать нечего —
+                    // даёт баннер на экране настроек сервера. Без SSH синхронизировать нечего -
                     // тоггл недоступен и показан выключенным.
                     SettingsCard {
                         SettingsSwitchRow(
@@ -278,16 +278,16 @@ fun ServerDetailScreen(
                 }
 
                 SectionLabel(stringResource(R.string.provider_vk_calls))
-                // «Настройки сервера»: при sync ON правки пушатся на сервер → нужен живой
-                // SSH; при sync OFF клиент-локальны → вход доступен и оффлайн. Правило
-                // общее с ServerManagementScreen — serverSettingsAvailable.
+                // "Настройки сервера": при sync ON правки пушатся на сервер -> нужен живой
+                // SSH; при sync OFF клиент-локальны -> вход доступен и оффлайн. Правило
+                // общее с ServerManagementScreen - serverSettingsAvailable.
                 val syncOn = server?.client?.syncServerSwitches == true
-                // Connecting/Working — transient: SSH ещё поднимается. Пункт не должен мигать,
+                // Connecting/Working - transient: SSH ещё поднимается. Пункт не должен мигать,
                 // держим его видимым на время подключения (сам экран при входе покажет
                 // дебаунс-карту потери связи, а не пустоту). Прячем только в терминальных
                 // disconnected-состояниях (Failed/NotPaired) при sync ON.
                 val connecting = status is ServerHubStatus.Connecting || status is ServerHubStatus.Working
-                // Без isActive-гейта: неактивный сервер форсит status=Offline → connected/connecting=false,
+                // Без isActive-гейта: неактивный сервер форсит status=Offline -> connected/connecting=false,
                 // поэтому serverSettingsAvailable даёт true только при sync OFF (клиент-локальные настройки),
                 // а при sync ON остаётся скрытым (пушить на сервер нечем без живого SSH активного сервера).
                 val showServerSettings = serverSettingsAvailable(connected || connecting, syncOn)
@@ -321,8 +321,8 @@ fun ServerDetailScreen(
                     }
                 }
 
-                // «Отладочная информация» — отдельный экран, вход гейтится глобальным
-                // nerdMode (Продвинутые → Режим отладки).
+                // "Отладочная информация" - отдельный экран, вход гейтится глобальным
+                // nerdMode (Продвинутые -> Режим отладки).
                 if (nerdMode && server != null) {
                     SettingsCard {
                         SettingsEntryRow(
@@ -349,7 +349,7 @@ fun ServerDetailScreen(
                         settingsViewModel.deleteServer(serverId)
                         showDelete = false
                         // Навигацию назад делает null-guard выше (server станет null
-                        // после async-удаления) — не зовём pop тут, иначе двойной pop.
+                        // после async-удаления) - не зовём pop тут, иначе двойной pop.
                     },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error

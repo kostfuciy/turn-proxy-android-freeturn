@@ -67,7 +67,7 @@ fun AppNavigation(
 ) {
     val isInitialized by settingsViewModel.isInitialized.collectAsStateWithLifecycle()
 
-    // Не строим UI пока DataStore не загружен — иначе showTgDialog захватит
+    // Не строим UI пока DataStore не загружен - иначе showTgDialog захватит
     // дефолтный tgSubscribeShown=false и диалог мигнёт у тех, кто его уже закрыл.
     if (!isInitialized) return
 
@@ -77,21 +77,21 @@ fun AppNavigation(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
 
-    // Смена активного профиля делает сохранённый стек вкладки «Настройки» устаревшим
-    // (там мог остаться хаб другого сервера) — сбрасываем его к корню. Если стек
-    // настроек сейчас активен (не сохранён), clearBackStack — no-op.
+    // Смена активного профиля делает сохранённый стек вкладки "Настройки" устаревшим
+    // (там мог остаться хаб другого сервера) - сбрасываем его к корню. Если стек
+    // настроек сейчас активен (не сохранён), clearBackStack - no-op.
     LaunchedEffect(navController) {
         settingsViewModel.serversSnapshot
             .map { it.activeId }
             .distinctUntilChanged()
-            .drop(1) // первая эмиссия — текущее значение, не смена
+            .drop(1) // первая эмиссия - текущее значение, не смена
             .collect { navController.clearBackStack<SettingsGraph>() }
     }
 
     var showTgDialog by rememberSaveable { mutableStateOf(!initialTgSubscribeShown) }
 
-    // Все маршруты живут внутри графов-вкладок — бар виден всегда.
-    // navigationSuiteType (а не layoutType) — expressive-дефолт: на телефоне компактный
+    // Все маршруты живут внутри графов-вкладок - бар виден всегда.
+    // navigationSuiteType (а не layoutType) - expressive-дефолт: на телефоне компактный
     // ShortNavigationBar (64dp вместо 80dp), бар без подписей не выглядит пустым.
     val suiteType = NavigationSuiteScaffoldDefaults
         .navigationSuiteType(currentWindowAdaptiveInfo())
@@ -107,7 +107,7 @@ fun AppNavigation(
                     selected = selected,
                     onClick = {
                         if (selected) {
-                            // Повторный тап по активной вкладке — назад в её корень.
+                            // Повторный тап по активной вкладке - назад в её корень.
                             navController.popBackStack(item.startRoute, inclusive = false)
                         } else {
                             HapticUtil.perform(context, HapticUtil.Pattern.SELECTION)
@@ -179,8 +179,8 @@ private fun AppNavHost(
     proxyViewModel: ProxyViewModel,
     serverViewModel: ServerViewModel
 ) {
-    // Reduced-motion (системная «Убрать анимации»): мгновенные переходы без слайда.
-    // MotionScheme.expressive() в теме рулит моушеном самих m3-компонентов; здесь —
+    // Reduced-motion (системная "Убрать анимации"): мгновенные переходы без слайда.
+    // MotionScheme.expressive() в теме рулит моушеном самих m3-компонентов; здесь -
     // только навигационные shared-axis X переходы, единый источник длительностей выше.
     val reducedMotion = LocalReducedMotion.current
     NavHost(
@@ -189,7 +189,7 @@ private fun AppNavHost(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(),
-        // Снаппи emphasized shared-axis X вместо дефолтного медленного 700ms-fade.
+        // Быстрый emphasized shared-axis X вместо дефолтного медленного 700ms-fade.
         enterTransition = {
             if (reducedMotion) EnterTransition.None
             else fadeIn(tween(NAV_FADE_IN_MS, easing = EmphasizedEasing)) +
@@ -220,7 +220,7 @@ private fun AppNavHost(
 
 private data class NavItem(
     val graphRoute: Any,   // граф-вкладка (цель навигации, проверка selected)
-    val startRoute: Any,   // корневой экран вкладки (для re-tap → корень)
+    val startRoute: Any,   // корневой экран вкладки (для re-tap в корень)
     val labelResId: Int,
     val selectedIconRes: Int,
     val unselectedIconRes: Int

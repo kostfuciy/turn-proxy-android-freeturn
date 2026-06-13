@@ -22,7 +22,7 @@ import org.koin.dsl.module
 val appModule = module {
     single { AppPreferences(androidContext()) }
     single { LocalProxyManager(androidContext()) }
-    // factory: каждому потребителю свой SSHManager — lastSeenFingerprint (TOFU) не должен
+    // factory: каждому потребителю свой SSHManager - lastSeenFingerprint (TOFU) не должен
     // делиться между живой сессией и мастером/шарингом.
     factory { SSHManager() }
     single { SshRepository(androidContext(), get()) }

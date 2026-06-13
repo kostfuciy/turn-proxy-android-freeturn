@@ -8,7 +8,7 @@ import android.os.Build
 import android.os.PersistableBundle
 
 /**
- * Кладёт текст в системный буфер. [sensitive] — для секретов (ключи, ссылки
+ * Кладёт текст в системный буфер. [sensitive] - для секретов (ключи, ссылки
  * с WG-конфигом): на Android 13+ скрывает содержимое в превью буфера.
  */
 fun Context.copyToClipboard(label: String, text: String, sensitive: Boolean = false) {
