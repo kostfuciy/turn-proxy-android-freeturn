@@ -1,4 +1,4 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.proxy
 
 /** Событие, распознанное в строке лога клиентского ядра. */
 sealed interface CoreLogEvent {

@@ -57,7 +57,7 @@ import com.freeturn.app.ui.theme.Spacing
 internal fun SshLogCard(
     lines: List<String>,
     canFetchJournal: Boolean,
-    journalLoading: Boolean,
+    logsLoading: Boolean,
     onFetchJournal: () -> Unit,
     onClear: () -> Unit
 ) {
@@ -110,10 +110,10 @@ internal fun SshLogCard(
                     if (canFetchJournal) {
                         FilledTonalButton(
                             onClick = onFetchJournal,
-                            enabled = !journalLoading,
+                            enabled = !logsLoading,
                             modifier = Modifier.weight(1f)
                         ) {
-                            if (journalLoading) {
+                            if (logsLoading) {
                                 LoadingIndicator(modifier = Modifier.size(22.dp))
                             } else {
                                 Icon(

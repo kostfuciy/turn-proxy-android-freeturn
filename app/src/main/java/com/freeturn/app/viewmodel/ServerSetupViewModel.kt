@@ -10,8 +10,8 @@ import com.freeturn.app.data.Server
 import com.freeturn.app.data.ServerOpts
 import com.freeturn.app.data.SshConfig
 import com.freeturn.app.data.TunnelTransport
-import com.freeturn.app.domain.ProxyOrchestrator
-import com.freeturn.app.domain.ServerSetupRepository
+import com.freeturn.app.domain.proxy.ProxyOrchestrator
+import com.freeturn.app.domain.server.ServerSetupRepository
 import com.freeturn.app.domain.server.ServerOptions
 import com.freeturn.app.ui.util.HapticUtil
 import kotlinx.coroutines.Job
@@ -316,7 +316,7 @@ class ServerSetupViewModel(
             }
 
             val obfOn = c.obfProfile != ObfProfile.NONE
-            repo.startServer(
+            repo.start(
                 cfg,
                 ServerOptions(
                     listen = "0.0.0.0:${c.listenPort}",

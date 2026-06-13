@@ -1,4 +1,4 @@
-﻿package com.freeturn.app.domain
+﻿package com.freeturn.app.domain.ssh
 
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.HostKey

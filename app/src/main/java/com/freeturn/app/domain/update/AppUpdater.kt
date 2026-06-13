@@ -1,9 +1,10 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.update
 
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.FileProvider
+import com.freeturn.app.domain.UpdateState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

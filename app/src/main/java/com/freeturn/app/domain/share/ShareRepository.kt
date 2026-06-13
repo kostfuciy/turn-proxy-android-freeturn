@@ -1,4 +1,4 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.share
 
 import android.content.Context
 import com.freeturn.app.data.SshConfig
@@ -14,6 +14,7 @@ import com.freeturn.app.domain.server.ServerControl
 import com.freeturn.app.domain.server.asUnit
 import com.freeturn.app.domain.server.decodeBase64
 import com.freeturn.app.domain.server.toFailure
+import com.freeturn.app.domain.ssh.SSHManager
 import java.util.Base64
 
 /**

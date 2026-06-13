@@ -1,15 +1,6 @@
 package com.freeturn.app.domain.server
 
-/**
- * Результат выполнения серверной команды (из stdout).
- * Парсит k=v значения, `LOG:` префиксы и статус (`RESULT=ok/err`).
- */
-sealed class CmdResult {
-    abstract val logs: List<String>
-    data class Ok(val kv: Map<String, String>, override val logs: List<String>) : CmdResult()
-    data class Err(val message: String, override val logs: List<String>) : CmdResult()
-}
-
+/** Парсит stdout серверной команды в [CmdResult]: `LOG:` префиксы, k=v значения и `RESULT`. */
 object ServerOutputParser {
     fun parse(raw: String): CmdResult {
         // Проброс транспортных ошибок от SSHManager.
@@ -41,23 +32,6 @@ object ServerOutputParser {
             )
         }
     }
-}
-
-/** Ошибка серверной команды; message - текст из скрипта/SSH для UI. */
-class ServerCommandException(message: String) : Exception(message)
-
-/** Текст ошибки + хвост LOG-строк для диагностики. */
-fun CmdResult.Err.errMessage(): String {
-    val tail = logs.takeLast(2).filter { it.isNotBlank() }
-    return if (tail.isEmpty()) message else message + "\n" + tail.joinToString("\n")
-}
-
-fun CmdResult.Err.toFailure(): Result<Nothing> =
-    Result.failure(ServerCommandException(errMessage()))
-
-fun CmdResult.asUnit(): Result<Unit> = when (this) {
-    is CmdResult.Ok -> Result.success(Unit)
-    is CmdResult.Err -> toFailure()
 }
 
 /** base64 -> UTF-8 текст; битое значение -> null. */

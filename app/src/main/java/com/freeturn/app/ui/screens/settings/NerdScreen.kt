@@ -137,7 +137,7 @@ private fun NerdContent(
     val serverId = server.id
     val client = server.client
     val sshLog by serverViewModel.sshLog.collectAsStateWithLifecycle()
-    val journalLoading by serverViewModel.journalLoading.collectAsStateWithLifecycle()
+    val logsLoading by serverViewModel.logsLoading.collectAsStateWithLifecycle()
 
     // Per-server отладочные флаги. updateServerClient разводит active/inactive и
     // применяет logsEnabled живьём - отдельные VM-сеттеры не нужны.
@@ -177,7 +177,7 @@ private fun NerdContent(
         SshLogCard(
             lines = sshLog,
             canFetchJournal = online != null,
-            journalLoading = journalLoading,
+            logsLoading = logsLoading,
             onFetchJournal = {
                 HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
                 serverViewModel.fetchServerLogs()

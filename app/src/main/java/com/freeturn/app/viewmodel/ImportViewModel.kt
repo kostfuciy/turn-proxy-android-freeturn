@@ -11,7 +11,7 @@ import com.freeturn.app.data.ServerOpts
 import com.freeturn.app.data.SshConfig
 import com.freeturn.app.data.TunnelTransport
 import com.freeturn.app.data.share.FreeturnLink
-import com.freeturn.app.domain.LinkImportBus
+import com.freeturn.app.domain.share.LinkImportBus
 import com.freeturn.app.ui.util.HapticUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow

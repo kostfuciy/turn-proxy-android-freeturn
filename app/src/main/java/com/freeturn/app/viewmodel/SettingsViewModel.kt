@@ -9,10 +9,10 @@ import com.freeturn.app.data.ClientConfig
 import com.freeturn.app.data.ObfProfile
 import com.freeturn.app.data.Server
 import com.freeturn.app.data.ServersSnapshot
-import com.freeturn.app.domain.AppUpdater
-import com.freeturn.app.domain.LocalProxyManager
-import com.freeturn.app.domain.ProxyOrchestrator
-import com.freeturn.app.domain.SshRepository
+import com.freeturn.app.domain.update.AppUpdater
+import com.freeturn.app.domain.proxy.LocalProxyManager
+import com.freeturn.app.domain.proxy.ProxyOrchestrator
+import com.freeturn.app.domain.ssh.SshRepository
 import com.freeturn.app.domain.UpdateState
 import com.freeturn.app.proxy.ProxyService
 import com.freeturn.app.proxy.ProxyServiceState

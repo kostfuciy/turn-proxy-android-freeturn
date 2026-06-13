@@ -11,7 +11,7 @@ import com.freeturn.app.data.share.ShareInfo
 import com.freeturn.app.data.share.ShareLinkBuilder
 import com.freeturn.app.data.share.SharedClient
 import com.freeturn.app.data.share.WgPeer
-import com.freeturn.app.domain.ShareRepository
+import com.freeturn.app.domain.share.ShareRepository
 import com.freeturn.app.ui.util.HapticUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

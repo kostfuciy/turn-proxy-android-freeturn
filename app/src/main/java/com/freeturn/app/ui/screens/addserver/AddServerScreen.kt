@@ -37,7 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.freeturn.app.R
 import com.freeturn.app.data.share.FreeturnLink
-import com.freeturn.app.domain.LinkImportBus
+import com.freeturn.app.domain.share.LinkImportBus
 import com.freeturn.app.ui.components.SectionLabel
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.components.SettingsEntryRow

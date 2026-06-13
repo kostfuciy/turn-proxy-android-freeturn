@@ -15,7 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.freeturn.app.domain.LinkImportBus
+import com.freeturn.app.domain.share.LinkImportBus
 import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.navigation.AppNavigation
 import com.freeturn.app.ui.theme.FreeTurnTheme

@@ -1,4 +1,4 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.share
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow

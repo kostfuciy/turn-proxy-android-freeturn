@@ -1,7 +1,9 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.ssh
 
 import android.content.Context
 import com.freeturn.app.data.SshConfig
+import com.freeturn.app.domain.ServerState
+import com.freeturn.app.domain.SshConnectionState
 import com.freeturn.app.domain.server.CmdResult
 import com.freeturn.app.domain.server.ServerCommand
 import com.freeturn.app.domain.server.ServerControl
@@ -34,8 +36,8 @@ class SshRepository(
 
     // Идёт ли запрос server.log. Сам вывод уходит в sshLog (через runCmd -> logCmdResult),
     // отдельного состояния журнала нет - он часть единого SSH-лога.
-    private val _journalLoading = MutableStateFlow(false)
-    val journalLoading: StateFlow<Boolean> = _journalLoading.asStateFlow()
+    private val _logsLoading = MutableStateFlow(false)
+    val logsLoading: StateFlow<Boolean> = _logsLoading.asStateFlow()
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
     private fun timestamp(): String = LocalTime.now().format(timeFormatter)
@@ -144,15 +146,15 @@ class SshRepository(
     }
 
     /** Идемпотентная установка: скрипт сам решает, скачивать или нет (по sha256). */
-    suspend fun installServer(): InstallOutcome {
-        val cfg = activeSshConfig ?: return InstallOutcome.Failed("not connected")
-        if (cfg.ip.isEmpty()) return InstallOutcome.Failed("no SSH config")
+    suspend fun installServer(): InstallResult {
+        val cfg = activeSshConfig ?: return InstallResult.Failed("not connected")
+        if (cfg.ip.isEmpty()) return InstallResult.Failed("no SSH config")
         _serverState.value = ServerState.Working("Установка free-turn-proxy...")
 
         return when (val result = runCmd(cfg, "Установка", ServerCommand.Install)) {
             is CmdResult.Err -> {
                 _serverState.value = ServerState.Error(result.message)
-                InstallOutcome.Failed(result.message)
+                InstallResult.Failed(result.message)
             }
             is CmdResult.Ok -> {
                 val stage = result.kv["STAGE"] ?: "ok"
@@ -170,7 +172,7 @@ class SshRepository(
                 }
                 delay(300)
                 checkServerState(cfg, silent = true)
-                InstallOutcome.Success(stage = stage, version = version, needsRestart = needsRestart)
+                InstallResult.Success(stage = stage, version = version, needsRestart = needsRestart)
             }
         }
     }
@@ -227,11 +229,11 @@ class SshRepository(
     suspend fun fetchServerLogs(lines: Int = 200) {
         val cfg = activeSshConfig ?: return
         if (cfg.ip.isEmpty()) return
-        _journalLoading.value = true
+        _logsLoading.value = true
         try {
             runCmd(cfg, "server.log", ServerCommand.FetchLogs(lines))
         } finally {
-            _journalLoading.value = false
+            _logsLoading.value = false
         }
     }
 
@@ -247,18 +249,18 @@ class SshRepository(
         disconnect()
         _sshLog.value = emptyList()
     }
-}
 
-sealed class InstallOutcome {
-    /**
-     * stage: cached | downloaded; version - только если ядро вернуло.
-     * needsRestart - true, если бинарь был переустановлен поверх работающего
-     * процесса; перед использованием новой версии нужен start.
-     */
-    data class Success(
-        val stage: String,
-        val version: String?,
-        val needsRestart: Boolean = false
-    ) : InstallOutcome()
-    data class Failed(val message: String) : InstallOutcome()
+    sealed class InstallResult {
+        /**
+         * stage: cached | downloaded; version - только если ядро вернуло.
+         * needsRestart - true, если бинарь был переустановлен поверх работающего
+         * процесса; перед использованием новой версии нужен start.
+         */
+        data class Success(
+            val stage: String,
+            val version: String?,
+            val needsRestart: Boolean = false
+        ) : InstallResult()
+        data class Failed(val message: String) : InstallResult()
+    }
 }

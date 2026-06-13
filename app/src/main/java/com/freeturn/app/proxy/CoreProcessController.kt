@@ -9,11 +9,11 @@ import com.freeturn.app.data.AppPreferences
 import com.freeturn.app.data.CoreArgs
 import com.freeturn.app.domain.CaptchaSession
 import com.freeturn.app.domain.ConnectionStats
-import com.freeturn.app.domain.CoreConnectionTracker
-import com.freeturn.app.domain.CoreLogEvent
-import com.freeturn.app.domain.CoreLogParser
+import com.freeturn.app.domain.proxy.CoreConnectionTracker
+import com.freeturn.app.domain.proxy.CoreLogEvent
+import com.freeturn.app.domain.proxy.CoreLogParser
 import com.freeturn.app.domain.StartupResult
-import com.freeturn.app.domain.WireGuardTunnelManager
+import com.freeturn.app.domain.proxy.WireGuardTunnelManager
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader

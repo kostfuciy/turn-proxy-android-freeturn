@@ -7,10 +7,10 @@ import com.freeturn.app.data.AppPreferences
 import com.freeturn.app.data.ObfProfile
 import com.freeturn.app.data.ServerOpts
 import com.freeturn.app.data.SshConfig
-import com.freeturn.app.domain.ProxyOrchestrator
+import com.freeturn.app.domain.proxy.ProxyOrchestrator
 import com.freeturn.app.domain.ServerState
 import com.freeturn.app.domain.SshConnectionState
-import com.freeturn.app.domain.SshRepository
+import com.freeturn.app.domain.ssh.SshRepository
 import com.freeturn.app.ui.util.HapticUtil
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,7 +33,7 @@ class ServerViewModel(
     val sshState: StateFlow<SshConnectionState> = sshRepository.sshState
     val serverState: StateFlow<ServerState> = sshRepository.serverState
     val sshLog: StateFlow<List<String>> = sshRepository.sshLog
-    val journalLoading: StateFlow<Boolean> = sshRepository.journalLoading
+    val logsLoading: StateFlow<Boolean> = sshRepository.logsLoading
 
     val serverOpts: StateFlow<ServerOpts> = prefs.serverOptsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ServerOpts())
@@ -94,7 +94,7 @@ class ServerViewModel(
     fun installServer() {
         viewModelScope.launch {
             val outcome = sshRepository.installServer()
-            if (outcome is com.freeturn.app.domain.InstallOutcome.Success) {
+            if (outcome is SshRepository.InstallResult.Success) {
                 if (outcome.stage == "downloaded" && prefs.serverOptsFlow.first().obfKey.isBlank()) {
                     prefs.updateActiveServer { it.copy(opts = it.opts.copy(obfKey = ObfProfile.generateKey())) }
                 }

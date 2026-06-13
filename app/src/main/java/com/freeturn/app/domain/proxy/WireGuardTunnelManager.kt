@@ -1,4 +1,4 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.proxy
 
 import android.content.Context
 import com.freeturn.app.data.ClientConfig

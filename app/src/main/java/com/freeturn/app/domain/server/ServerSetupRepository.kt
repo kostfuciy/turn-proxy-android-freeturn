@@ -1,14 +1,8 @@
-package com.freeturn.app.domain
+package com.freeturn.app.domain.server
 
 import android.content.Context
 import com.freeturn.app.data.SshConfig
-import com.freeturn.app.domain.server.CmdResult
-import com.freeturn.app.domain.server.ServerCommand
-import com.freeturn.app.domain.server.ServerControl
-import com.freeturn.app.domain.server.ServerOptions
-import com.freeturn.app.domain.server.asUnit
-import com.freeturn.app.domain.server.decodeBase64
-import com.freeturn.app.domain.server.toFailure
+import com.freeturn.app.domain.ssh.SSHManager
 
 /**
  * SSH-операции мастера добавления self-hosted сервера. Собственный [SSHManager] и
@@ -66,6 +60,6 @@ class ServerSetupRepository(context: Context, private val ssh: SSHManager) {
             )
         }
 
-    suspend fun startServer(cfg: SshConfig, opts: ServerOptions): Result<Unit> =
+    suspend fun start(cfg: SshConfig, opts: ServerOptions): Result<Unit> =
         control.run(cfg, ServerCommand.Start(opts)).asUnit()
 }

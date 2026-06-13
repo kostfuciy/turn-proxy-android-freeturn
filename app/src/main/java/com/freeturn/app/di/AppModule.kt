@@ -1,14 +1,14 @@
 package com.freeturn.app.di
 
 import com.freeturn.app.data.AppPreferences
-import com.freeturn.app.domain.AppUpdater
-import com.freeturn.app.domain.LinkImportBus
-import com.freeturn.app.domain.LocalProxyManager
-import com.freeturn.app.domain.ProxyOrchestrator
-import com.freeturn.app.domain.SSHManager
-import com.freeturn.app.domain.ServerSetupRepository
-import com.freeturn.app.domain.ShareRepository
-import com.freeturn.app.domain.SshRepository
+import com.freeturn.app.domain.update.AppUpdater
+import com.freeturn.app.domain.share.LinkImportBus
+import com.freeturn.app.domain.proxy.LocalProxyManager
+import com.freeturn.app.domain.proxy.ProxyOrchestrator
+import com.freeturn.app.domain.ssh.SSHManager
+import com.freeturn.app.domain.server.ServerSetupRepository
+import com.freeturn.app.domain.share.ShareRepository
+import com.freeturn.app.domain.ssh.SshRepository
 import com.freeturn.app.viewmodel.ImportViewModel
 import com.freeturn.app.viewmodel.ProxyViewModel
 import com.freeturn.app.viewmodel.ServerSetupViewModel
