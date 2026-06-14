@@ -1,9 +1,4 @@
 <div align="center">
-
-# FreeTurn
-
-**Универсальный прокси-туннель для инкапсуляции UDP/TCP трафика поверх протокола TURN**
-
 [![Core](https://img.shields.io/badge/Core-free--turn--proxy-blue?logo=github&logoColor=white)](https://github.com/samosvalishe/free-turn-proxy)
 ![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Compose-7F52FF?logo=kotlin&logoColor=white)
@@ -12,11 +7,11 @@
 [![Telegram](https://img.shields.io/badge/Telegram-канал-26A5E4?logo=telegram&logoColor=white)](https://t.me/+5BdkU4q_CGQyNTdi)
 </div>
 
+![Banner](assets/banner.jpg)
+
 > **Disclaimer.** Проект предназначен **исключительно для образовательных и исследовательских целей.**
 
 > **Важно:** При обновлении до версии 3.0.0 все настройки будут сброшены.
-
-![Banner](assets/banner.jpg)
 
 ## Возможности
 
