@@ -36,7 +36,7 @@ import com.freeturn.app.data.config.ObfProfile
 import com.freeturn.app.data.share.FreeturnLink
 import com.freeturn.app.ui.components.SettingsCard
 import com.freeturn.app.ui.components.SettingsFieldSlot
-import com.freeturn.app.viewmodel.ImportViewModel
+import com.freeturn.app.viewmodel.share.ImportViewModel
 import org.koin.androidx.compose.koinViewModel
 import com.freeturn.app.ui.theme.Spacing
 

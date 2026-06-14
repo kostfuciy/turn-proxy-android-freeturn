@@ -48,17 +48,17 @@ import androidx.compose.ui.util.lerp
 import com.freeturn.app.R
 import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.theme.extendedColorScheme
-import com.freeturn.app.viewmodel.ServerHubStatus
+import com.freeturn.app.viewmodel.server.ServerHubState
 import com.freeturn.app.ui.theme.Spacing
 
 /**
- * Карточка статуса сервера в хабе. Один источник истины - [ServerHubStatus] (собран в VM).
+ * Карточка статуса сервера в хабе. Один источник истины - [ServerHubState] (собран в VM).
  * Тело меняется одним [AnimatedContent]; фазы холодного захода
  * (disconnected/connecting/checking) свёрнуты в Connecting - один переход в Online.
  */
 @Composable
 internal fun ServerStatusCard(
-    status: ServerHubStatus,
+    status: ServerHubState,
     syncOn: Boolean,
     onActivate: () -> Unit,
     onRetry: () -> Unit
@@ -67,7 +67,7 @@ internal fun ServerStatusCard(
     // Sync OFF - live-фазы ядра (online/connecting/working/failed) нерелевантны: клиент с
     // сервером не общается. Схлопываем их в нейтральную заглушку. Actionable-состояния
     // (Offline/NotPaired) остаются - это setup, а не live-статус.
-    val effective = if (!syncOn && status.isLivePhase()) ServerHubStatus.SyncOff else status
+    val effective = if (!syncOn && status.isLivePhase()) ServerHubState.SyncOff else status
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -103,13 +103,13 @@ internal fun ServerStatusCard(
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg)
             ) {
                 when (s) {
-                    is ServerHubStatus.Online -> OnlineContent(s)
-                    ServerHubStatus.Connecting -> BusyContent(stringResource(R.string.pill_connecting))
-                    is ServerHubStatus.Working -> BusyContent(s.action)
-                    ServerHubStatus.Failed -> FailedContent(onRetry)
-                    ServerHubStatus.Offline -> OfflineContent(onActivate)
-                    ServerHubStatus.NotPaired -> NotPairedContent()
-                    ServerHubStatus.SyncOff -> StatusHero(
+                    is ServerHubState.Online -> OnlineContent(s)
+                    ServerHubState.Connecting -> BusyContent(stringResource(R.string.pill_connecting))
+                    is ServerHubState.Working -> BusyContent(s.action)
+                    ServerHubState.Failed -> FailedContent(onRetry)
+                    ServerHubState.Offline -> OfflineContent(onActivate)
+                    ServerHubState.NotPaired -> NotPairedContent()
+                    ServerHubState.SyncOff -> StatusHero(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         title = stringResource(R.string.hub_sync_off)
                     )
@@ -120,20 +120,20 @@ internal fun ServerStatusCard(
 }
 
 /** Стабильный ключ фазы - AnimatedContent анимирует только при его смене. */
-private fun ServerHubStatus.phaseKey(): Int = when (this) {
-    ServerHubStatus.Offline -> 0
-    ServerHubStatus.NotPaired -> 1
-    ServerHubStatus.Connecting -> 2
-    is ServerHubStatus.Working -> 3
-    is ServerHubStatus.Online -> 4
-    ServerHubStatus.Failed -> 5
-    ServerHubStatus.SyncOff -> 6
+private fun ServerHubState.phaseKey(): Int = when (this) {
+    ServerHubState.Offline -> 0
+    ServerHubState.NotPaired -> 1
+    ServerHubState.Connecting -> 2
+    is ServerHubState.Working -> 3
+    is ServerHubState.Online -> 4
+    ServerHubState.Failed -> 5
+    ServerHubState.SyncOff -> 6
 }
 
-/** Live-фазы зависят от живого SSH/ядра - при sync OFF схлопываются в [ServerHubStatus.SyncOff]. */
-private fun ServerHubStatus.isLivePhase(): Boolean = when (this) {
-    is ServerHubStatus.Online, ServerHubStatus.Connecting,
-    is ServerHubStatus.Working, ServerHubStatus.Failed -> true
+/** Live-фазы зависят от живого SSH/ядра - при sync OFF схлопываются в [ServerHubState.SyncOff]. */
+private fun ServerHubState.isLivePhase(): Boolean = when (this) {
+    is ServerHubState.Online, ServerHubState.Connecting,
+    is ServerHubState.Working, ServerHubState.Failed -> true
     else -> false
 }
 
@@ -215,7 +215,7 @@ private fun BusyContent(title: String) {
  * "Отладочной информации" (NerdScreen).
  */
 @Composable
-private fun OnlineContent(status: ServerHubStatus.Online) {
+private fun OnlineContent(status: ServerHubState.Online) {
     val ext = MaterialTheme.extendedColorScheme
     val (color, title) = when {
         !status.installed -> ext.warning to stringResource(R.string.hub_not_installed)

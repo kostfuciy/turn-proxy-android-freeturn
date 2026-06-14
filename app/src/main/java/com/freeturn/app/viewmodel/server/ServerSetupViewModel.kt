@@ -1,4 +1,4 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.server
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -14,6 +14,7 @@ import com.freeturn.app.domain.proxy.ProxyOrchestrator
 import com.freeturn.app.domain.server.ServerSetupRepository
 import com.freeturn.app.domain.server.ServerOptions
 import com.freeturn.app.ui.util.HapticUtil
+import com.freeturn.app.viewmodel.uiError
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -231,7 +232,7 @@ class ServerSetupViewModel(
                 .onFailure { e ->
                     HapticUtil.perform(appContext, HapticUtil.Pattern.ERROR)
                     _uiState.update {
-                        it.copy(checkingSsh = false, sshError = e.uiMessage(appContext))
+                        it.copy(checkingSsh = false, sshError = e.uiError(appContext))
                     }
                 }
         }

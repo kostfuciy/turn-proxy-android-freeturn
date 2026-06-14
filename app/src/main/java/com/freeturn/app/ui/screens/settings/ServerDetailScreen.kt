@@ -56,10 +56,10 @@ import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.components.SettingsSwitchRow
 import com.freeturn.app.ui.util.redact
-import com.freeturn.app.viewmodel.ServerHubStatus
-import com.freeturn.app.viewmodel.ServerViewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
-import com.freeturn.app.viewmodel.serverSettingsAvailable
+import com.freeturn.app.viewmodel.server.ServerHubState
+import com.freeturn.app.viewmodel.server.ServerViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
+import com.freeturn.app.viewmodel.server.serverSettingsAvailable
 import com.freeturn.app.ui.theme.Spacing
 
 /**
@@ -82,7 +82,7 @@ fun ServerDetailScreen(
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
     val sshState by serverViewModel.sshState.collectAsStateWithLifecycle()
     val sshConfig by serverViewModel.sshConfig.collectAsStateWithLifecycle()
-    val coreStatus by serverViewModel.hubStatus.collectAsStateWithLifecycle()
+    val coreStatus by serverViewModel.hubState.collectAsStateWithLifecycle()
     val nerdMode by settingsViewModel.nerdMode.collectAsStateWithLifecycle()
     val server = snapshot.list.firstOrNull { it.id == serverId }
     val isActive = snapshot.activeId == serverId
@@ -95,14 +95,14 @@ fun ServerDetailScreen(
 
     // Единая статус-модель хаба: core-статус от VM (активный сервер) + server-контекст.
     // Порядок гарантирует отсутствие мигания: пока снапшот не загружен - skeleton, а не Offline.
-    val status: ServerHubStatus = when {
-        !snapshot.loaded -> ServerHubStatus.Connecting
-        !isActive -> ServerHubStatus.Offline
-        server?.ssh?.ip.isNullOrBlank() -> ServerHubStatus.NotPaired
+    val status: ServerHubState = when {
+        !snapshot.loaded -> ServerHubState.Connecting
+        !isActive -> ServerHubState.Offline
+        server?.ssh?.ip.isNullOrBlank() -> ServerHubState.NotPaired
         else -> coreStatus
     }
     // Вход в "Настройки сервера" доступен только при живом ядре (Online).
-    val online = status as? ServerHubStatus.Online
+    val online = status as? ServerHubState.Online
     val connected = online != null
 
     // Best-effort авто-сопряжение активного сервера при входе (не дублируем на других экранах).
@@ -286,7 +286,7 @@ fun ServerDetailScreen(
                 // держим его видимым на время подключения (сам экран при входе покажет
                 // дебаунс-карту потери связи, а не пустоту). Прячем только в терминальных
                 // disconnected-состояниях (Failed/NotPaired) при sync ON.
-                val connecting = status is ServerHubStatus.Connecting || status is ServerHubStatus.Working
+                val connecting = status is ServerHubState.Connecting || status is ServerHubState.Working
                 // Без isActive-гейта: неактивный сервер форсит status=Offline -> connected/connecting=false,
                 // поэтому serverSettingsAvailable даёт true только при sync OFF (клиент-локальные настройки),
                 // а при sync ON остаётся скрытым (пушить на сервер нечем без живого SSH активного сервера).

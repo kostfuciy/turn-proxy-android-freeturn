@@ -49,9 +49,9 @@ import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.components.SettingsSwitchRow
 import com.freeturn.app.ui.util.redact
-import com.freeturn.app.viewmodel.ServerHubStatus
-import com.freeturn.app.viewmodel.ServerViewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.server.ServerHubState
+import com.freeturn.app.viewmodel.server.ServerViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import com.freeturn.app.ui.theme.Spacing
 
 /** Тег релиза приходит и как "1.0.3", и как "v1.0.3" - нормализуем без "vv". */
@@ -71,7 +71,7 @@ fun NerdScreen(
 ) {
     val snapshot by settingsViewModel.serversSnapshot.collectAsStateWithLifecycle()
     val privacyMode by settingsViewModel.privacyMode.collectAsStateWithLifecycle()
-    val coreStatus by serverViewModel.hubStatus.collectAsStateWithLifecycle()
+    val coreStatus by serverViewModel.hubState.collectAsStateWithLifecycle()
     val server = snapshot.list.firstOrNull { it.id == serverId }
     val isActive = snapshot.activeId == serverId
 
@@ -81,8 +81,8 @@ fun NerdScreen(
         return
     }
 
-    // hubStatus принадлежит активному серверу - для неактивного живого статуса нет.
-    val online = if (isActive) coreStatus as? ServerHubStatus.Online else null
+    // hubState принадлежит активному серверу - для неактивного живого статуса нет.
+    val online = if (isActive) coreStatus as? ServerHubState.Online else null
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -128,7 +128,7 @@ fun NerdScreen(
 @Composable
 private fun NerdContent(
     server: Server,
-    online: ServerHubStatus.Online?,
+    online: ServerHubState.Online?,
     privacyMode: Boolean,
     settingsViewModel: SettingsViewModel,
     serverViewModel: ServerViewModel
@@ -192,7 +192,7 @@ private fun NerdContent(
 
 /** Сырое состояние ядра: подписанные строки "ключ - значение". */
 @Composable
-private fun CoreStateCard(online: ServerHubStatus.Online, privacyMode: Boolean) {
+private fun CoreStateCard(online: ServerHubState.Online, privacyMode: Boolean) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,

@@ -43,7 +43,7 @@ import com.freeturn.app.data.AppChoice
 import com.freeturn.app.data.installedInternetApps
 import com.freeturn.app.data.toPackageSet
 import com.freeturn.app.ui.theme.Spacing
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 
 /**
  * Общий модальный лист split-tunneling. Один источник для главного экрана и экрана

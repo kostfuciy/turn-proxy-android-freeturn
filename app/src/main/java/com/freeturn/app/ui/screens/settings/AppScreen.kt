@@ -56,7 +56,7 @@ import com.freeturn.app.ui.components.SettingsRowIcon
 import com.freeturn.app.ui.components.SettingsSwitchRow
 import com.freeturn.app.ui.theme.Spacing
 import com.freeturn.app.ui.util.hapticClickable
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 
 /** "Приложение": интерфейсные тоггл-настройки, обновление и сброс. */
 @Suppress("AssignedValueIsNeverRead") // showResetDialog пишется в лямбдах диалога

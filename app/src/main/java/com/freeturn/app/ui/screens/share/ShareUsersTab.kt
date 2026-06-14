@@ -47,7 +47,7 @@ import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.components.SettingsRowIcon
 import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.theme.extendedColorScheme
-import com.freeturn.app.viewmodel.ShareUiState
+import com.freeturn.app.viewmodel.share.ShareUiState
 import com.freeturn.app.ui.theme.Spacing
 
 /** Пир считается онлайн, если хендшейк был не позже 3 минут назад (WG re-key ~2 мин). */

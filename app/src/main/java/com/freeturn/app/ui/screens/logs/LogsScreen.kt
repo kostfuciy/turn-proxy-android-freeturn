@@ -40,7 +40,7 @@ import com.freeturn.app.R
 import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.theme.extendedColorScheme
 import com.freeturn.app.ui.util.copyToClipboard
-import com.freeturn.app.viewmodel.ProxyViewModel
+import com.freeturn.app.viewmodel.proxy.ProxyViewModel
 import com.freeturn.app.ui.theme.Spacing
 
 @Composable

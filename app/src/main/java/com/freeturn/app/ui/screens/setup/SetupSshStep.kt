@@ -20,7 +20,7 @@ import com.freeturn.app.R
 import com.freeturn.app.ui.components.InlineErrorCard
 import com.freeturn.app.ui.components.SshFormFields
 import com.freeturn.app.ui.theme.LocalReducedMotion
-import com.freeturn.app.viewmodel.SetupSshDraft
+import com.freeturn.app.viewmodel.server.SetupSshDraft
 import com.freeturn.app.ui.theme.Spacing
 
 /**

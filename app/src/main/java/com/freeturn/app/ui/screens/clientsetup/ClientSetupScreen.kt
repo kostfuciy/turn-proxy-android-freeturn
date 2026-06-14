@@ -45,8 +45,8 @@ import com.freeturn.app.data.config.Provider
 import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.theme.Spacing
-import com.freeturn.app.viewmodel.ServerViewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.server.ServerViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 

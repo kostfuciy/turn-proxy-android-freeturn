@@ -16,9 +16,9 @@ import com.freeturn.app.ui.screens.settings.ServerDetailScreen
 import com.freeturn.app.ui.screens.settings.ServersListScreen
 import com.freeturn.app.ui.screens.settings.SettingsScreen
 import com.freeturn.app.ui.screens.sshsetup.SshSetupScreen
-import com.freeturn.app.viewmodel.ProxyViewModel
-import com.freeturn.app.viewmodel.ServerViewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.proxy.ProxyViewModel
+import com.freeturn.app.viewmodel.server.ServerViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 
 /** Вкладка "Настройки": Настройки -> Серверы -> [сервер] -> подключение/режим/сервер -> SSH. */
 internal fun NavGraphBuilder.settingsGraph(

@@ -58,8 +58,8 @@ import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.components.SettingsEntryRow
 import com.freeturn.app.ui.screens.splittunnel.SplitTunnelModal
 import com.freeturn.app.ui.theme.Spacing
-import com.freeturn.app.viewmodel.ProxyViewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.proxy.ProxyViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

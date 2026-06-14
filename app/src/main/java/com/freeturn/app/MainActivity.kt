@@ -21,7 +21,7 @@ import com.freeturn.app.ui.navigation.AppNavigation
 import com.freeturn.app.ui.theme.FreeTurnTheme
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 

@@ -1,4 +1,4 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.share
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -13,6 +13,7 @@ import com.freeturn.app.data.share.SharedClient
 import com.freeturn.app.data.share.WgPeer
 import com.freeturn.app.domain.share.ShareRepository
 import com.freeturn.app.ui.util.HapticUtil
+import com.freeturn.app.viewmodel.uiError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,8 +21,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Готовая ссылка для result-sheet (после peer-add или повторной выдачи).
- *  [wg] - фактический тип выданного доступа (для бейджа протокола). */
-data class ShareResult(val userName: String, val link: String, val wg: Boolean)
+ *  [isWg] - фактический тип выданного доступа (для бейджа протокола). */
+data class ShareResult(val userName: String, val link: String, val isWg: Boolean)
 
 /** Цель отзыва: WG-пир ([pubkey]) либо cid-гость без пира ([clientId]). */
 data class RevokeTarget(
@@ -202,7 +203,7 @@ class ShareViewModel(
                 }
                 .onFailure { e ->
                     _uiState.update {
-                        it.copy(infoLoading = false, infoError = e.uiMessage(appContext))
+                        it.copy(infoLoading = false, infoError = e.uiError(appContext))
                     }
                 }
         }
@@ -281,7 +282,7 @@ class ShareViewModel(
 
     private fun commitCreateError(e: Throwable) {
         HapticUtil.perform(appContext, HapticUtil.Pattern.ERROR)
-        _uiState.update { it.copy(creating = false, createError = e.uiMessage(appContext)) }
+        _uiState.update { it.copy(creating = false, createError = e.uiError(appContext)) }
     }
 
     fun dismissResult() = _uiState.update { it.copy(result = null) }
@@ -310,7 +311,7 @@ class ShareViewModel(
                 }
                 .onFailure { e ->
                     _uiState.update {
-                        it.copy(peersLoading = false, peersError = e.uiMessage(appContext))
+                        it.copy(peersLoading = false, peersError = e.uiError(appContext))
                     }
                 }
         }
@@ -337,7 +338,7 @@ class ShareViewModel(
                                 link = ShareLinkBuilder.build(
                                     server, info, peer.name, access.clientConf, access.clientId
                                 ),
-                                wg = true
+                                isWg = true
                             )
                         )
                     }
@@ -345,7 +346,7 @@ class ShareViewModel(
                 .onFailure { e ->
                     HapticUtil.perform(appContext, HapticUtil.Pattern.ERROR)
                     _uiState.update {
-                        it.copy(resharePubkey = null, peersError = e.uiMessage(appContext))
+                        it.copy(resharePubkey = null, peersError = e.uiError(appContext))
                     }
                 }
         }
@@ -361,7 +362,7 @@ class ShareViewModel(
                 result = ShareResult(
                     userName = client.name,
                     link = ShareLinkBuilder.build(server, info, client.name, null, client.clientId),
-                    wg = false
+                    isWg = false
                 )
             )
         }
@@ -406,7 +407,7 @@ class ShareViewModel(
                         it.copy(
                             revoking = false,
                             revokeTarget = null,
-                            peersError = e.uiMessage(appContext)
+                            peersError = e.uiError(appContext)
                         )
                     }
                 }

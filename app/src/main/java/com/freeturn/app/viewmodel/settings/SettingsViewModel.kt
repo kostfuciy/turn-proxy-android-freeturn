@@ -1,4 +1,4 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.settings
 
 import android.content.Context
 import android.content.Intent
@@ -14,8 +14,7 @@ import com.freeturn.app.domain.proxy.LocalProxyManager
 import com.freeturn.app.domain.proxy.ProxyOrchestrator
 import com.freeturn.app.domain.ssh.SshRepository
 import com.freeturn.app.domain.UpdateState
-import com.freeturn.app.proxy.ProxyService
-import com.freeturn.app.proxy.ProxyServiceState
+import com.freeturn.app.domain.proxy.ProxyServiceState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -315,7 +314,7 @@ class SettingsViewModel(
     fun resetAllSettings() {
         viewModelScope.launch {
             if (ProxyServiceState.isRunning.value) {
-                appContext.stopService(Intent(appContext, ProxyService::class.java))
+                proxyManager.stopProxy()
             }
             prefs.resetAll()
             sshRepository.resetAll()

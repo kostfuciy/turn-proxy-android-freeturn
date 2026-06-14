@@ -32,8 +32,8 @@ import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.components.SettingsCard
 import com.freeturn.app.ui.components.SettingsFieldSlot
 import com.freeturn.app.ui.components.SettingsRowIcon
-import com.freeturn.app.viewmodel.ShareUiState
-import com.freeturn.app.viewmodel.ShareViewModel
+import com.freeturn.app.viewmodel.share.ShareUiState
+import com.freeturn.app.viewmodel.share.ShareViewModel
 import com.freeturn.app.ui.theme.Spacing
 
 /**

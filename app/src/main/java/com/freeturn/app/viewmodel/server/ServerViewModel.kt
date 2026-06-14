@@ -1,4 +1,4 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.server
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -44,16 +44,16 @@ class ServerViewModel(
     /**
      * Сводный статус АКТИВНОГО сервера для хаба - одна модель из 2 потоков. Server-контекст
      * (активность сервера, наличие SSH) добавляет экран. Промежуточные фазы коллапсятся в
-     * [ServerHubStatus.Connecting]: от cold start до готовности - один переход в [ServerHubStatus.Online].
+     * [ServerHubState.Connecting]: от cold start до готовности - один переход в [ServerHubState.Online].
      */
-    val hubStatus: StateFlow<ServerHubStatus> =
+    val hubState: StateFlow<ServerHubState> =
         combine(sshState, serverState) { ssh, server ->
             when {
-                ssh is SshConnectionState.Error -> ServerHubStatus.Failed
-                server is ServerState.Error -> ServerHubStatus.Failed
-                server is ServerState.Working -> ServerHubStatus.Working(server.action)
+                ssh is SshConnectionState.Error -> ServerHubState.Failed
+                server is ServerState.Error -> ServerHubState.Failed
+                server is ServerState.Working -> ServerHubState.Working(server.action)
                 ssh is SshConnectionState.Connected && server is ServerState.Known ->
-                    ServerHubStatus.Online(
+                    ServerHubState.Online(
                         running = server.running,
                         installed = server.installed,
                         tcpMode = server.tcpMode,
@@ -62,10 +62,10 @@ class ServerViewModel(
                         sshIp = ssh.ip
                     )
                 // Disconnected / Connecting / Connected+Checking -> единый busy-визуал.
-                else -> ServerHubStatus.Connecting
+                else -> ServerHubState.Connecting
             }
         }.distinctUntilChanged()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ServerHubStatus.Connecting)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ServerHubState.Connecting)
 
     fun connectSsh(config: SshConfig) {
         viewModelScope.launch {

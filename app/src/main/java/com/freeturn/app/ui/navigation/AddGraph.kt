@@ -8,7 +8,7 @@ import androidx.navigation.compose.navigation
 import com.freeturn.app.ui.screens.addserver.AddServerScreen
 import com.freeturn.app.ui.screens.setup.ServerSetupScreen
 import com.freeturn.app.ui.screens.share.QrScannerScreen
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 
 /**
  * Вкладка "+": мастер self-hosted живёт целиком в этом графе. Кросс-графовый push

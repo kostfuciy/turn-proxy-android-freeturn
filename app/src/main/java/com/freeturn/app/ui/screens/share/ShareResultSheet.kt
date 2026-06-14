@@ -52,7 +52,7 @@ import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.components.QrCode
 import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.util.copyToClipboard
-import com.freeturn.app.viewmodel.ShareResult
+import com.freeturn.app.viewmodel.share.ShareResult
 import com.freeturn.app.ui.theme.Spacing
 
 /**
@@ -93,11 +93,11 @@ fun ShareResultSheet(result: ShareResult, shareInfo: ShareInfo?, onDismiss: () -
                 textAlign = TextAlign.Center
             )
 
-            // Протокол - по факту выданного доступа (result.wg), обфускация - из share-info.
+            // Протокол - по факту выданного доступа (result.isWg), обфускация - из share-info.
             val obfOn = shareInfo?.let {
                 it.obfProfile.isNotEmpty() && it.obfProfile != ObfProfile.NONE
             } ?: false
-            ProtocolPill(wg = result.wg, obfOn = obfOn)
+            ProtocolPill(wg = result.isWg, obfOn = obfOn)
 
             Text(
                 stringResource(R.string.share_result_desc),

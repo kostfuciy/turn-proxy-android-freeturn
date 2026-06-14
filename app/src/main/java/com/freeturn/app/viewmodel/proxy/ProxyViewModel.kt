@@ -1,11 +1,11 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.proxy
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.freeturn.app.data.AppPreferences
 import com.freeturn.app.domain.proxy.LocalProxyManager
 import com.freeturn.app.domain.ProxyState
-import com.freeturn.app.proxy.ProxyServiceState
+import com.freeturn.app.domain.proxy.ProxyServiceState
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch

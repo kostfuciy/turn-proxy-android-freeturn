@@ -54,7 +54,7 @@ import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.components.EmptyState
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.theme.LocalReducedMotion
-import com.freeturn.app.viewmodel.ShareViewModel
+import com.freeturn.app.viewmodel.share.ShareViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import com.freeturn.app.ui.theme.Spacing

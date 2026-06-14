@@ -74,8 +74,8 @@ import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.components.SettingsBackButton
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.theme.LocalReducedMotion
-import com.freeturn.app.viewmodel.ServerSetupViewModel
-import com.freeturn.app.viewmodel.SetupStep
+import com.freeturn.app.viewmodel.server.ServerSetupViewModel
+import com.freeturn.app.viewmodel.server.SetupStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

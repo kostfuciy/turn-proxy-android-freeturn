@@ -1,16 +1,16 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.server
 
-sealed interface ServerHubStatus {
+sealed interface ServerHubState {
     /**
      * Профиль не активен: живой SSH/ядро принадлежат активному. Предлагаем активировать.
      */
-    data object Offline : ServerHubStatus
+    data object Offline : ServerHubState
     /** Активен, но SSH не настроен - нечего подключать. */
-    data object NotPaired : ServerHubStatus
+    data object NotPaired : ServerHubState
     /** Идёт подключение/проверка (единая busy-фаза, skeleton). */
-    data object Connecting : ServerHubStatus
+    data object Connecting : ServerHubState
     /** Идёт серверное действие (старт/стоп/установка). */
-    data class Working(val action: String) : ServerHubStatus
+    data class Working(val action: String) : ServerHubState
     /** SSH установлен и состояние ядра известно. */
     data class Online(
         val running: Boolean,
@@ -19,12 +19,12 @@ sealed interface ServerHubStatus {
         val obfProfile: String?,
         val version: String?,
         val sshIp: String
-    ) : ServerHubStatus
+    ) : ServerHubState
     /** Ошибка SSH или серверной команды. Причина - внутренняя java/SSH-ошибка, юзеру
      *  бесполезна и в hero не показывается; полный текст остаётся в sshLog (NerdScreen). */
-    data object Failed : ServerHubStatus
+    data object Failed : ServerHubState
     /** Sync с сервером выключен - live-статус ядра нерелевантен, нейтральная заглушка. */
-    data object SyncOff : ServerHubStatus
+    data object SyncOff : ServerHubState
 }
 
 /**

@@ -49,9 +49,9 @@ import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.components.InlineErrorCard
 import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.theme.extendedColorScheme
-import com.freeturn.app.viewmodel.SetupInstallState
-import com.freeturn.app.viewmodel.SetupSummary
-import com.freeturn.app.viewmodel.SetupTaskKind
+import com.freeturn.app.viewmodel.server.SetupInstallState
+import com.freeturn.app.viewmodel.server.SetupSummary
+import com.freeturn.app.viewmodel.server.SetupTaskKind
 import com.freeturn.app.ui.theme.Spacing
 
 /**

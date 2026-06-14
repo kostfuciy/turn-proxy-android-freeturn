@@ -33,7 +33,7 @@ import com.freeturn.app.ui.components.SettingsEntryRow
 import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.components.SettingsSwitchRow
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import com.freeturn.app.ui.theme.Spacing
 
 /** Корневой экран настроек (нижнее меню): серверы, приложение, продвинутые, о проекте. */

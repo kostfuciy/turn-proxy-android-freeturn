@@ -35,7 +35,7 @@ import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.settingsItemShape
 import com.freeturn.app.ui.util.redact
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import com.freeturn.app.ui.theme.Spacing
 
 /** Список добавленных серверов. Клик по серверу - его детальный экран. */

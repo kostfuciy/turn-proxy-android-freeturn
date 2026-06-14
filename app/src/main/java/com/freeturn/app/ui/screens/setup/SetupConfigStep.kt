@@ -42,7 +42,7 @@ import com.freeturn.app.ui.components.SettingsFieldSlot
 import com.freeturn.app.ui.components.SettingsRowDivider
 import com.freeturn.app.ui.theme.LocalReducedMotion
 import com.freeturn.app.ui.theme.extendedColorScheme
-import com.freeturn.app.viewmodel.SetupConfigDraft
+import com.freeturn.app.viewmodel.server.SetupConfigDraft
 import com.freeturn.app.ui.theme.Spacing
 
 /**

@@ -1,4 +1,4 @@
-package com.freeturn.app.viewmodel
+package com.freeturn.app.viewmodel.share
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

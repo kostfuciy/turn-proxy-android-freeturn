@@ -45,9 +45,9 @@ import com.freeturn.app.ui.util.HapticUtil
 import com.freeturn.app.ui.screens.captcha.CaptchaWebViewDialog
 import com.freeturn.app.ui.screens.share.ImportSheet
 import com.freeturn.app.ui.theme.LocalReducedMotion
-import com.freeturn.app.viewmodel.ProxyViewModel
-import com.freeturn.app.viewmodel.ServerViewModel
-import com.freeturn.app.viewmodel.SettingsViewModel
+import com.freeturn.app.viewmodel.proxy.ProxyViewModel
+import com.freeturn.app.viewmodel.server.ServerViewModel
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
