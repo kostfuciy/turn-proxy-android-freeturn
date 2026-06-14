@@ -10,7 +10,8 @@ data class BackupData(
     val servers: List<Server>,
     val activeId: String?,
     val dynamicTheme: Boolean,
-    val nerdMode: Boolean
+    val nerdMode: Boolean,
+    val privacyMode: Boolean
 )
 
 /** Сериализация [BackupData] в JSON (серверы - через тот же [ServerJson], что и в DataStore). */
@@ -23,6 +24,7 @@ object SettingsBackup {
         data.activeId?.let { put("activeId", it) }
         put("dynamicTheme", data.dynamicTheme)
         put("nerdMode", data.nerdMode)
+        put("privacyMode", data.privacyMode)
     }.toString()
 
     fun decode(json: String): BackupData {
@@ -36,7 +38,8 @@ object SettingsBackup {
             servers = ServerJson.decodeList(serversJson),
             activeId = o.optString("activeId").takeIf { it.isNotBlank() },
             dynamicTheme = o.optBoolean("dynamicTheme", true),
-            nerdMode = o.optBoolean("nerdMode", true)
+            nerdMode = o.optBoolean("nerdMode", true),
+            privacyMode = o.optBoolean("privacyMode", false)
         )
     }
 }

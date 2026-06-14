@@ -19,12 +19,13 @@ class BackupManager(private val prefs: AppPreferences) {
     }
 
     /**
-     * Расшифровывает и добавляет серверы из бэкапа. Возвращает число добавленных.
+     * Расшифровывает бэкап: добавляет серверы и восстанавливает тоггл-настройки.
+     * Возвращает число добавленных серверов.
      * Бросает [BackupCrypto.BadPasswordException] / [BackupCrypto.FormatException].
      */
     suspend fun import(bytes: ByteArray, password: String): Int = withContext(Dispatchers.Default) {
         val payload = BackupCrypto.decrypt(bytes, password)
         val data = SettingsBackup.decode(String(payload, Charsets.UTF_8))
-        prefs.importServers(data.servers)
+        prefs.importBackup(data)
     }
 }

@@ -79,8 +79,8 @@ class SettingsViewModel(
     private val _initialTgSubscribeShown = MutableStateFlow(false)
     val initialTgSubscribeShown: StateFlow<Boolean> = _initialTgSubscribeShown.asStateFlow()
 
-    private val _privacyMode = MutableStateFlow(false)
-    val privacyMode: StateFlow<Boolean> = _privacyMode.asStateFlow()
+    val privacyMode: StateFlow<Boolean> = prefs.privacyModeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     // Дебаунс быстрых тыков тоггла синка: persist мгновенный, а дорогой сетевой
     // side-effect (SSH stop+start + рестарт прокси) откладывается и коалесцируется.
@@ -100,7 +100,9 @@ class SettingsViewModel(
         }
     }
 
-    fun setPrivacyMode(enabled: Boolean) { _privacyMode.value = enabled }
+    fun setPrivacyMode(enabled: Boolean) {
+        viewModelScope.launch { prefs.setPrivacyMode(enabled) }
+    }
 
     fun setDynamicTheme(enabled: Boolean) {
         viewModelScope.launch { prefs.setDynamicTheme(enabled) }

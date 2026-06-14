@@ -15,9 +15,11 @@ import com.freeturn.app.domain.share.LinkImportBus
 import com.freeturn.app.data.HapticUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -58,6 +60,10 @@ class ImportViewModel(
 
     private val _uiState = MutableStateFlow(ImportUiState())
     val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
+
+    // Отдельно от uiState: offer()/dismiss() пересоздают uiState и затёрли бы флаг.
+    val privacyMode: StateFlow<Boolean> = prefs.privacyModeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     init {
         viewModelScope.launch {

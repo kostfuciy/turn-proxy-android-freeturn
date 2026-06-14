@@ -34,6 +34,7 @@ class AppPreferences(context: Context) {
     companion object {
         val DYNAMIC_THEME = booleanPreferencesKey("dynamic_theme")
         val NERD_MODE = booleanPreferencesKey("nerd_mode")
+        val PRIVACY_MODE = booleanPreferencesKey("privacy_mode")
         val TG_SUBSCRIBE_SHOWN = booleanPreferencesKey("tg_subscribe_shown")
         val SERVERS_JSON = stringPreferencesKey("servers_json")
         val ACTIVE_SERVER_ID = stringPreferencesKey("active_server_id")
@@ -81,6 +82,9 @@ class AppPreferences(context: Context) {
 
     /** "Режим отладки" - открывает отладочные секции (журнал, verbose, экран логов). */
     val nerdModeFlow: Flow<Boolean> = prefFlow { prefs -> prefs[NERD_MODE] ?: true }
+
+    /** Приватный режим - маскирует чувствительные поля в UI. */
+    val privacyModeFlow: Flow<Boolean> = prefFlow { prefs -> prefs[PRIVACY_MODE] ?: false }
 
     val tgSubscribeShownFlow: Flow<Boolean> = prefFlow { prefs -> prefs[TG_SUBSCRIBE_SHOWN] ?: false }
 
@@ -187,6 +191,10 @@ class AppPreferences(context: Context) {
         context.dataStore.edit { prefs -> prefs[NERD_MODE] = enabled }
     }
 
+    suspend fun setPrivacyMode(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[PRIVACY_MODE] = enabled }
+    }
+
     suspend fun setTgSubscribeShown() {
         context.dataStore.edit { prefs -> prefs[TG_SUBSCRIBE_SHOWN] = true }
     }
@@ -217,20 +225,21 @@ class AppPreferences(context: Context) {
             servers = snap.list,
             activeId = snap.activeId,
             dynamicTheme = dynamicThemeFlow.first(),
-            nerdMode = nerdModeFlow.first()
+            nerdMode = nerdModeFlow.first(),
+            privacyMode = privacyModeFlow.first()
         )
     }
 
     /**
-     * Добавляет импортированные серверы к существующим (не заменяет): новые id и
-     * уникализация имён, чтобы не затереть текущие. Возвращает число добавленных.
+     * Применяет бэкап: добавляет серверы к существующим (не заменяет - новые id и
+     * уникализация имён) и восстанавливает интерфейсные тоггл-настройки. Всё одной
+     * транзакцией. Возвращает число добавленных серверов.
      */
-    suspend fun importServers(servers: List<Server>): Int {
-        if (servers.isEmpty()) return 0
+    suspend fun importBackup(data: BackupData): Int {
         var added = 0
         context.dataStore.edit { prefs ->
             val list = ServerJson.decodeList(prefs[SERVERS_JSON]).toMutableList()
-            servers.forEach { incoming ->
+            data.servers.forEach { incoming ->
                 val base = incoming.name.trim().ifBlank { Server.FALLBACK_NAME }
                 list += incoming.copy(
                     id = UUID.randomUUID().toString(),
@@ -242,6 +251,9 @@ class AppPreferences(context: Context) {
             if (prefs[ACTIVE_SERVER_ID].isNullOrBlank() && list.isNotEmpty()) {
                 prefs[ACTIVE_SERVER_ID] = list.first().id
             }
+            prefs[DYNAMIC_THEME] = data.dynamicTheme
+            prefs[NERD_MODE] = data.nerdMode
+            prefs[PRIVACY_MODE] = data.privacyMode
         }
         return added
     }
