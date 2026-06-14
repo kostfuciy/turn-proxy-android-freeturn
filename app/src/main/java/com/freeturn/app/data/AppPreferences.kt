@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.freeturn.app.data.backup.BackupData
 import com.freeturn.app.data.config.ClientConfig
 import com.freeturn.app.data.config.ClientId
 import com.freeturn.app.data.config.SshConfig
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+import java.util.UUID
 
 // Битый файл переживаем с дефолтами: чтение/запись на пути старта туннеля
 // (ownClientId, оркестратор) не должны ронять процесс.
@@ -206,5 +208,41 @@ class AppPreferences(context: Context) {
     /** Полный сброс настроек. */
     suspend fun resetAll() {
         context.dataStore.edit { it.clear() }
+    }
+
+    /** Снимок для бэкапа: все серверы, активный и интерфейсные тоггл-настройки. */
+    suspend fun exportData(): BackupData {
+        val snap = serversSnapshot.first()
+        return BackupData(
+            servers = snap.list,
+            activeId = snap.activeId,
+            dynamicTheme = dynamicThemeFlow.first(),
+            nerdMode = nerdModeFlow.first()
+        )
+    }
+
+    /**
+     * Добавляет импортированные серверы к существующим (не заменяет): новые id и
+     * уникализация имён, чтобы не затереть текущие. Возвращает число добавленных.
+     */
+    suspend fun importServers(servers: List<Server>): Int {
+        if (servers.isEmpty()) return 0
+        var added = 0
+        context.dataStore.edit { prefs ->
+            val list = ServerJson.decodeList(prefs[SERVERS_JSON]).toMutableList()
+            servers.forEach { incoming ->
+                val base = incoming.name.trim().ifBlank { Server.FALLBACK_NAME }
+                list += incoming.copy(
+                    id = UUID.randomUUID().toString(),
+                    name = uniqueServerName(base, list)
+                )
+                added++
+            }
+            prefs[SERVERS_JSON] = ServerJson.encodeList(list)
+            if (prefs[ACTIVE_SERVER_ID].isNullOrBlank() && list.isNotEmpty()) {
+                prefs[ACTIVE_SERVER_ID] = list.first().id
+            }
+        }
+        return added
     }
 }

@@ -5,6 +5,9 @@
 
 package com.freeturn.app.ui.screens.settings
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,12 +31,16 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,17 +53,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.freeturn.app.R
 import com.freeturn.app.domain.UpdateState
 import com.freeturn.app.data.HapticUtil
+import com.freeturn.app.ui.components.BackupPasswordDialog
 import com.freeturn.app.ui.components.SectionLabel
 import com.freeturn.app.ui.components.SettingsBackButton
 import com.freeturn.app.ui.components.SettingsCard
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
+import com.freeturn.app.ui.components.SettingsEntryRow
 import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
 import com.freeturn.app.ui.components.SettingsRowIcon
 import com.freeturn.app.ui.components.SettingsSwitchRow
 import com.freeturn.app.ui.theme.Spacing
 import com.freeturn.app.ui.util.hapticClickable
+import com.freeturn.app.viewmodel.settings.BackupEvent
+import com.freeturn.app.viewmodel.settings.BackupFailReason
 import com.freeturn.app.viewmodel.settings.SettingsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** "Приложение": интерфейсные тоггл-настройки, обновление и сброс. */
 @Suppress("AssignedValueIsNeverRead") // showResetDialog пишется в лямбдах диалога
@@ -71,7 +85,24 @@ fun AppScreen(
     val updateState by settingsViewModel.updateState.collectAsStateWithLifecycle()
     val appVersion = rememberAppVersion()
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
+    var showExportDialog by rememberSaveable { mutableStateOf(false) }
+    var exportPassword by rememberSaveable { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    // SAF: имя выбирает пользователь, пароль уже введён в диалоге выше.
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        if (uri != null) settingsViewModel.exportBackup(uri, exportPassword)
+    }
+
+    // Снекбар по результату экспорта/импорта.
+    LaunchedEffect(Unit) {
+        settingsViewModel.backupEvents.collect { event ->
+            snackbarHostState.showSnackbar(backupEventMessage(context, event))
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -82,6 +113,7 @@ fun AppScreen(
                 scrollBehavior = scrollBehavior
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
@@ -138,6 +170,21 @@ fun AppScreen(
                     }
                 )
 
+                SectionLabel(stringResource(R.string.app_section_backup))
+                SettingsGroup {
+                    SettingsGroupItem(0, 1) {
+                        SettingsEntryRow(
+                            iconRes = R.drawable.cloud_download_24px,
+                            title = stringResource(R.string.backup_export_title),
+                            subtitle = stringResource(R.string.backup_export_desc),
+                            onClick = {
+                                HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
+                                showExportDialog = true
+                            }
+                        )
+                    }
+                }
+
                 SectionLabel(stringResource(R.string.app_section_reset))
                 SettingsCard {
                     ResetRow(onClick = { showResetDialog = true })
@@ -169,7 +216,35 @@ fun AppScreen(
             }
         )
     }
+
+    if (showExportDialog) {
+        BackupPasswordDialog(
+            title = stringResource(R.string.backup_export_title),
+            confirmLabel = stringResource(R.string.backup_export_action),
+            requireConfirmation = true,
+            onConfirm = { password ->
+                exportPassword = password
+                showExportDialog = false
+                val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+                exportLauncher.launch("freeturn-backup-$stamp.ftbackup")
+            },
+            onDismiss = { showExportDialog = false }
+        )
+    }
 }
+
+/** Текст снекбара по результату экспорта/импорта (строки выбирает UI, не ViewModel). */
+internal fun backupEventMessage(context: android.content.Context, event: BackupEvent): String =
+    when (event) {
+        BackupEvent.ExportSuccess -> context.getString(R.string.backup_export_ok)
+        BackupEvent.ExportFailed -> context.getString(R.string.backup_export_fail)
+        is BackupEvent.ImportSuccess -> context.getString(R.string.backup_import_ok, event.count)
+        is BackupEvent.ImportFailed -> when (event.reason) {
+            BackupFailReason.BAD_PASSWORD -> context.getString(R.string.backup_import_bad_password)
+            BackupFailReason.BAD_FILE -> context.getString(R.string.backup_import_bad_file)
+            BackupFailReason.IO -> context.getString(R.string.backup_import_fail)
+        }
+    }
 
 /**
  * Карточка обновления. Двухэтажная: шапка (иконка, заголовок, статус), под ней действие

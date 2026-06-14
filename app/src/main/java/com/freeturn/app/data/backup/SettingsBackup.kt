@@ -1,0 +1,42 @@
+package com.freeturn.app.data.backup
+
+import com.freeturn.app.data.server.Server
+import com.freeturn.app.data.server.ServerJson
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** Содержимое бэкапа: профили + активный + интерфейсные тоггл-настройки. */
+data class BackupData(
+    val servers: List<Server>,
+    val activeId: String?,
+    val dynamicTheme: Boolean,
+    val nerdMode: Boolean
+)
+
+/** Сериализация [BackupData] в JSON (серверы - через тот же [ServerJson], что и в DataStore). */
+object SettingsBackup {
+    private const val FORMAT_VERSION = 1
+
+    fun encode(data: BackupData): String = JSONObject().apply {
+        put("v", FORMAT_VERSION)
+        put("servers", JSONArray(ServerJson.encodeList(data.servers)))
+        data.activeId?.let { put("activeId", it) }
+        put("dynamicTheme", data.dynamicTheme)
+        put("nerdMode", data.nerdMode)
+    }.toString()
+
+    fun decode(json: String): BackupData {
+        val o = try {
+            JSONObject(json)
+        } catch (_: Exception) {
+            throw BackupCrypto.FormatException("bad payload")
+        }
+        val serversJson = o.optJSONArray("servers")?.toString() ?: "[]"
+        return BackupData(
+            servers = ServerJson.decodeList(serversJson),
+            activeId = o.optString("activeId").takeIf { it.isNotBlank() },
+            dynamicTheme = o.optBoolean("dynamicTheme", true),
+            nerdMode = o.optBoolean("nerdMode", true)
+        )
+    }
+}

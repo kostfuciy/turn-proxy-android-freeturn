@@ -1,6 +1,7 @@
 package com.freeturn.app.di
 
 import com.freeturn.app.data.AppPreferences
+import com.freeturn.app.domain.backup.BackupManager
 import com.freeturn.app.domain.update.AppUpdater
 import com.freeturn.app.domain.share.LinkImportBus
 import com.freeturn.app.domain.proxy.LocalProxyManager
@@ -30,6 +31,7 @@ val appModule = module {
     factory { SSHManager() }
     single { SshRepository(androidContext(), get()) }
     single { AppUpdater(androidContext()) }
+    single { BackupManager(get()) }
     single { ProxyOrchestrator(get(), get(), get()) }
     // factory: своя SSH-сессия на каждый прогон мастера, живой SshRepository не трогаем.
     factory { ServerSetupRepository(androidContext(), get()) }

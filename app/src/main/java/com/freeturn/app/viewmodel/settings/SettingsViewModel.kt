@@ -2,26 +2,34 @@ package com.freeturn.app.viewmodel.settings
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.freeturn.app.data.AppPreferences
+import com.freeturn.app.data.backup.BackupCrypto
 import com.freeturn.app.data.config.ClientConfig
 import com.freeturn.app.data.config.ObfProfile
 import com.freeturn.app.data.server.Server
 import com.freeturn.app.data.server.ServersSnapshot
+import com.freeturn.app.domain.backup.BackupManager
 import com.freeturn.app.domain.update.AppUpdater
 import com.freeturn.app.domain.proxy.LocalProxyManager
 import com.freeturn.app.domain.proxy.ProxyOrchestrator
 import com.freeturn.app.domain.ssh.SshRepository
 import com.freeturn.app.domain.UpdateState
 import com.freeturn.app.domain.proxy.ProxyServiceState
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -29,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.IOException
 
 class SettingsViewModel(
     private val prefs: AppPreferences,
@@ -36,6 +45,7 @@ class SettingsViewModel(
     private val sshRepository: SshRepository,
     private val appUpdater: AppUpdater,
     private val orchestrator: ProxyOrchestrator,
+    private val backupManager: BackupManager,
     context: Context
 ) : ViewModel() {
 
@@ -311,6 +321,50 @@ class SettingsViewModel(
         appUpdater.resetState()
     }
 
+    // --- Экспорт / импорт ---
+    // Одноразовые события для снекбара (буфер 1 - не теряем при отсутствии подписчика).
+    private val _backupEvents = MutableSharedFlow<BackupEvent>(extraBufferCapacity = 1)
+    val backupEvents: SharedFlow<BackupEvent> = _backupEvents.asSharedFlow()
+
+    fun exportBackup(uri: Uri, password: String) {
+        viewModelScope.launch {
+            val event = try {
+                val bytes = backupManager.export(password)
+                withContext(Dispatchers.IO) {
+                    appContext.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        ?: throw IOException("no output stream")
+                }
+                BackupEvent.ExportSuccess
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                BackupEvent.ExportFailed
+            }
+            _backupEvents.emit(event)
+        }
+    }
+
+    fun importBackup(uri: Uri, password: String) {
+        viewModelScope.launch {
+            val event = try {
+                val bytes = withContext(Dispatchers.IO) {
+                    appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: throw IOException("no input stream")
+                }
+                BackupEvent.ImportSuccess(backupManager.import(bytes, password))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: BackupCrypto.BadPasswordException) {
+                BackupEvent.ImportFailed(BackupFailReason.BAD_PASSWORD)
+            } catch (_: BackupCrypto.FormatException) {
+                BackupEvent.ImportFailed(BackupFailReason.BAD_FILE)
+            } catch (_: Exception) {
+                BackupEvent.ImportFailed(BackupFailReason.IO)
+            }
+            _backupEvents.emit(event)
+        }
+    }
+
     fun resetAllSettings() {
         viewModelScope.launch {
             if (ProxyServiceState.isRunning.value) {
@@ -328,4 +382,15 @@ class SettingsViewModel(
             }
         }
     }
+}
+
+/** Причина провала импорта - текст для UI выбирает экран. */
+enum class BackupFailReason { BAD_PASSWORD, BAD_FILE, IO }
+
+/** Одноразовые результаты экспорта/импорта для снекбара. */
+sealed interface BackupEvent {
+    data object ExportSuccess : BackupEvent
+    data object ExportFailed : BackupEvent
+    data class ImportSuccess(val count: Int) : BackupEvent
+    data class ImportFailed(val reason: BackupFailReason) : BackupEvent
 }

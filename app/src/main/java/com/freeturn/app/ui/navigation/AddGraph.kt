@@ -22,6 +22,7 @@ internal fun NavGraphBuilder.addGraph(
     navigation<AddGraph>(startDestination = AddServer) {
         composable<AddServer> { entry ->
             AddServerScreen(
+                settingsViewModel = settingsViewModel,
                 onSelfHosted = { if (entry.isResumed()) navController.navigate(SelfHostedSetup) },
                 // Ручная настройка: создаём пустой сервер и уводим в его хаб. Хаб живёт в
                 // графе настроек - тот же tab-switch + singleTop-push, что у HomeScreen

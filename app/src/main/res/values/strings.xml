@@ -435,6 +435,25 @@
     <string name="app_reset_desc">Удалить все данные приложения</string>
     <string name="update_current_version">Текущая версия %1$s</string>
 
+    <!-- Резервная копия (экспорт/импорт) -->
+    <string name="app_section_backup">Резервная копия</string>
+    <string name="backup_export_title">Экспорт настроек</string>
+    <string name="backup_export_desc">Профили и настройки в зашифрованный файл</string>
+    <string name="backup_export_action">Экспорт</string>
+    <string name="backup_import_title">Импорт настроек</string>
+    <string name="backup_import_action">Импорт</string>
+    <string name="backup_password_label">Пароль</string>
+    <string name="backup_password_confirm_label">Повторите пароль</string>
+    <string name="backup_password_hint">Понадобится при импорте на другом устройстве. Восстановить нельзя.</string>
+    <string name="backup_password_empty">Введите пароль</string>
+    <string name="backup_password_mismatch">Пароли не совпадают</string>
+    <string name="backup_export_ok">Настройки экспортированы</string>
+    <string name="backup_export_fail">Не удалось сохранить файл</string>
+    <string name="backup_import_ok">Импортировано серверов: %1$d</string>
+    <string name="backup_import_fail">Не удалось импортировать файл</string>
+    <string name="backup_import_bad_password">Неверный пароль</string>
+    <string name="backup_import_bad_file">Файл не похож на бэкап FreeTurn</string>
+
     <!-- О проекте -->
     <string name="settings_about">О проекте</string>
     <string name="settings_about_desc">Версия, описание и ссылки</string>

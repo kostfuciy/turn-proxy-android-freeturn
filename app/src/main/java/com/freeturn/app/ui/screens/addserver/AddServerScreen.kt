@@ -6,6 +6,9 @@
 package com.freeturn.app.ui.screens.addserver
 
 import android.content.ClipboardManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,6 +26,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,12 +42,15 @@ import androidx.compose.ui.unit.dp
 import com.freeturn.app.R
 import com.freeturn.app.data.share.FreeturnLink
 import com.freeturn.app.domain.share.LinkImportBus
+import com.freeturn.app.ui.components.BackupPasswordDialog
 import com.freeturn.app.ui.components.SectionLabel
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
 import com.freeturn.app.ui.components.SettingsEntryRow
 import com.freeturn.app.ui.components.SettingsGroup
 import com.freeturn.app.ui.components.SettingsGroupItem
+import com.freeturn.app.ui.screens.settings.backupEventMessage
 import com.freeturn.app.ui.theme.Spacing
+import com.freeturn.app.viewmodel.settings.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -56,17 +63,36 @@ import org.koin.compose.koinInject
  */
 @Composable
 fun AddServerScreen(
+    settingsViewModel: SettingsViewModel,
     onSelfHosted: () -> Unit,
     onManualCreate: (String) -> Unit,
     onScanQr: () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var showManualDialog by rememberSaveable { mutableStateOf(false) }
+    var showImportDialog by rememberSaveable { mutableStateOf(false) }
+    var importUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
     val linkBus = koinInject<LinkImportBus>()
     val snackbarHostState = remember { SnackbarHostState() }
     val notLinkMessage = stringResource(R.string.add_paste_not_link)
     val scope = rememberCoroutineScope()
+
+    // Импорт из файла: выбор файла -> диалог пароля -> расшифровка/слияние в VM.
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            importUri = uri
+            showImportDialog = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        settingsViewModel.backupEvents.collect { event ->
+            snackbarHostState.showSnackbar(backupEventMessage(context, event))
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -136,10 +162,11 @@ fun AddServerScreen(
                         )
                     }
                     SettingsGroupItem(3, 4) {
-                        SoonMethodRow(
+                        SettingsEntryRow(
                             iconRes = R.drawable.description_24px,
                             title = stringResource(R.string.add_from_file_title),
-                            subtitle = stringResource(R.string.add_from_file_desc)
+                            subtitle = stringResource(R.string.add_from_file_desc),
+                            onClick = { importLauncher.launch(arrayOf("*/*")) }
                         )
                     }
                 }
@@ -154,6 +181,19 @@ fun AddServerScreen(
                 onManualCreate(name)
             },
             onDismiss = { showManualDialog = false }
+        )
+    }
+
+    if (showImportDialog) {
+        BackupPasswordDialog(
+            title = stringResource(R.string.backup_import_title),
+            confirmLabel = stringResource(R.string.backup_import_action),
+            requireConfirmation = false,
+            onConfirm = { password ->
+                showImportDialog = false
+                importUri?.let { settingsViewModel.importBackup(it, password) }
+            },
+            onDismiss = { showImportDialog = false }
         )
     }
 }
