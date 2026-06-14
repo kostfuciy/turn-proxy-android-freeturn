@@ -41,7 +41,7 @@ import com.freeturn.app.data.CoreArgs
 import com.freeturn.app.data.config.ObfProfile
 import com.freeturn.app.data.server.Server
 import com.freeturn.app.domain.server.ServerCommand
-import com.freeturn.app.domain.server.ServerOptions
+import com.freeturn.app.domain.server.ServerStartOptions
 import com.freeturn.app.data.HapticUtil
 import com.freeturn.app.ui.components.SettingsBackButton
 import com.freeturn.app.ui.components.SettingsContentMaxWidth
@@ -310,7 +310,7 @@ private fun clientCommandLine(server: Server, privacy: Boolean): String {
 
 /** Командная строка серверного ядра (как уходит по SSH в free-turn-control.sh). */
 private fun serverCommandLine(server: Server, privacy: Boolean): String {
-    val opts = ServerOptions(
+    val opts = ServerStartOptions(
         listen = server.proxyListen,
         connect = server.proxyConnect,
         tcpMode = server.client.tcpForward,

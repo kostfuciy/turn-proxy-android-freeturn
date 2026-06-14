@@ -11,7 +11,7 @@ sealed class ServerCommand {
         val endpoint: String,
         val adopt: Boolean = false
     ) : ServerCommand()
-    data class Start(val opts: ServerOptions) : ServerCommand()
+    data class Start(val opts: ServerStartOptions) : ServerCommand()
     data object Stop : ServerCommand()
     data class FetchLogs(val lines: Int = 80) : ServerCommand()
 
@@ -85,7 +85,7 @@ sealed class ServerCommand {
     }
 }
 
-data class ServerOptions(
+data class ServerStartOptions(
     val listen: String,
     val connect: String,
     /** true -> -mode tcp (TCP-форвард). false -> udp-релей (дефолт ядра). */

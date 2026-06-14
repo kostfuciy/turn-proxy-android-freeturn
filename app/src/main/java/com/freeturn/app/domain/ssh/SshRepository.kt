@@ -7,7 +7,7 @@ import com.freeturn.app.domain.SshConnectionState
 import com.freeturn.app.domain.server.CmdResult
 import com.freeturn.app.domain.server.ServerCommand
 import com.freeturn.app.domain.server.ServerControl
-import com.freeturn.app.domain.server.ServerOptions
+import com.freeturn.app.domain.server.ServerStartOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -200,7 +200,7 @@ class SshRepository(
         val result = runCmd(
             cfg, "Запуск",
             ServerCommand.Start(
-                ServerOptions(
+                ServerStartOptions(
                     listen = listen,
                     connect = connect,
                     tcpMode = tcpMode,

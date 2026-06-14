@@ -60,6 +60,6 @@ class ServerSetupRepository(context: Context, private val ssh: SSHManager) {
             )
         }
 
-    suspend fun start(cfg: SshConfig, opts: ServerOptions): Result<Unit> =
+    suspend fun start(cfg: SshConfig, opts: ServerStartOptions): Result<Unit> =
         control.run(cfg, ServerCommand.Start(opts)).asUnit()
 }
